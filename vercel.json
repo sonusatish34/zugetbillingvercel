@@ -1,5 +1,5 @@
 {
   "buildCommand": "next build",
-  "outputDirectory": ".next",
-  "framework": "nextjs"
+  "outputDirectory": ".next/standalone",
+  "publicPath": "public"
 }
