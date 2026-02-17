@@ -167,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </div>
 
           {/* Date Range Picker */}
-          <div className="hidden lg:block w-56">
+          <div className="hidden lg:block w-56 lg:w-72">
             <DateRangePicker
               value={dateRange}
               onChange={setDateRange}

@@ -218,7 +218,7 @@ const Login = ({ role = "user" }) => {
     <div
       className="h-screen w-screen min-h-screen"
       style={{
-        backgroundImage: "url('/images/bglogin.png')",
+        backgroundImage: "url('/loginscreen.webp')",
         backgroundSize: "cover",
         backgroundPosition: "bottom"
       }}

@@ -228,8 +228,8 @@ export  const DateRangePicker: React.FC<DateRangePickerProps> = ({
         )}
       >
         <div className="flex items-center gap-2 flex-1">
-          <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <span className={cn(!value?.startDate && 'text-gray-400 dark:text-gray-500')}>
+          <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400 text-xs" />
+          <span className={cn(!value?.startDate && ' text-gray-400 dark:text-gray-500')}>
             {displayText()}
           </span>
         </div>
