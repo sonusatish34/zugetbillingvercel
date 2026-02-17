@@ -269,7 +269,7 @@ const Login = ({ role = "user" }) => {
               </button>
             </form>
           ) : (
-            <div className="flex flex-col lg:gap-y-3 gap-y-1 justify-center items-left bg-white xl:h-[500px] xl:w-[500px] h-[200px] w-[250px] lg:h-[400px] lg:w-[400px] lg:px-14 lg:p-6 px-2 rounded-r-md shadow-lg">
+            <div className="flex flex-col lg:gap-y-3 gap-y-1 justify-center items-left bg-white xl:h-[500px] xl:w-[500px] h-[200px] w-[250px] lg:h-[400px] lg:w-[400px] lg:px-14 lg:p-6 px-2 rounded-r-md shadow-lg text-black">
               <p className="font-bold xl:text-xl lg:text-lg text-sm flex gap-x-2 items-center">
                 <span>WhatsApp OTP</span>
                 <FaWhatsapp className="text-[#075E54] size-6" />
