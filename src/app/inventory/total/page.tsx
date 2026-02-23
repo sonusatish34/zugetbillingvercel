@@ -288,7 +288,7 @@ const user: User = {
 
   return (
     <main className="space-y-6">
-      <p>kkk</p>
+      {/* <p>kkk</p> */}
       {/* ================= SIZE POPUP ================= */}
       {showSizePopup && selectedItem && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -450,7 +450,7 @@ const user: User = {
 
             <tbody>
               {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="border-t hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                <tr key={row.id} className="border-t-2 border-t-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/40">
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
