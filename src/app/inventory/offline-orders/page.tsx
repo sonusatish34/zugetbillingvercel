@@ -99,10 +99,10 @@ export default function OfflineOrdersPage() {
   return (
     <main className="space-y-6" role="main" aria-label="Offline Orders">
       <OfflineOrdersTable orders={orders} />
-      
+
       {/* Footer */}
       <footer className="flex flex-col sm:flex-row items-center justify-between py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-slate-700 mt-8 gap-2">
-        <p>© 2025 ZuGet, All Rights Reserved</p>
+        <p>© 2026 ZuGet, All Rights Reserved</p>
         <p>Version: 1.3.8</p>
       </footer>
     </main>

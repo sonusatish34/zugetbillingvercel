@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Swal from 'sweetalert2';
 import {
   ChevronRight,
   X,
@@ -24,6 +25,7 @@ import {
   Headphones,
   Ticket,
   User,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SIDEBAR_MENU } from '@/lib/constants';
@@ -56,6 +58,30 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
+
+
+  const handleLogout = async () => {
+    const confirmUpdate = await Swal.fire({
+      title: `Logout Confirmation`,
+      text: `Are you sure you want to Logout ?`,
+      icon: 'error',
+      showCancelButton: true,
+      confirmButtonText: `Yes `,
+      cancelButtonText: 'Cancel',
+    });
+
+
+    if (confirmUpdate.isConfirmed) {
+      try {
+
+        localStorage.clear();
+        location.reload()
+        Swal.fire('Deleted!', 'Deleted successfully.', 'success');
+      } catch (error) {
+        Swal.fire('ErrorSomething went wrong');
+      }
+    }
+  };
   const pathname = usePathname();
 
   const renderSubmenuItems = (items: { label: string; href?: string }[]) => {
@@ -180,7 +206,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
             </div>
             <div className="ml-4 mt-1 space-y-1">
               {SIDEBAR_MENU.manage.children && renderSubmenuItems(SIDEBAR_MENU.manage.children)}
+
             </div>
+
+          </div>
+          <div
+            onClick={() => handleLogout()}
+            className='text-sm w- px-6'>
+            <p className='flex items-center gap-x-2  bg-red-200 py-2 cursor-pointer px-2 rounded-md text-red-600 font-medium'>
+              <span><LogOut className='w-4 h-4' /></span><span>Logout</span>
+            </p>
           </div>
         </nav>
       </aside>

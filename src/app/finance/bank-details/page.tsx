@@ -69,9 +69,9 @@ export default function BankDetailsPage() {
         <h1 className="text-2xl font-bold text-primary">Bank Details</h1>
         {hasBankDetails && (
           <div className="flex items-center gap-3" role="toolbar" aria-label="Bank details actions">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="h-10 px-4"
               aria-label="Export bank details"
               type="button"
@@ -79,9 +79,9 @@ export default function BankDetailsPage() {
               <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
               <span>Export</span>
             </Button>
-            <Button 
-              variant="primary" 
-              size="sm" 
+            <Button
+              variant="primary"
+              size="sm"
               className="h-10 px-4"
               aria-label="Add new bank detail"
               type="button"
@@ -107,7 +107,7 @@ export default function BankDetailsPage() {
 
       {/* Footer */}
       <footer className="flex flex-col sm:flex-row items-center justify-between py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-slate-700 mt-8 gap-2">
-        <p>© 2025 ZuGet, All Rights Reserved</p>
+        <p>© 2026 ZuGet, All Rights Reserved</p>
         <p>Version: 1.3.8</p>
       </footer>
     </main>

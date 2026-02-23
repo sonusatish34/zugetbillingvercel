@@ -1,30 +1,87 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 
 interface WelcomeBannerProps {
   imageSrc?: string;
   imageAlt?: string;
+  storeName?: string;
+  storeId?: string;
+  ownerName?: string;
 }
 
 export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
   imageSrc,
   imageAlt = 'Welcome illustration',
+  storeName,
+  ownerName,
 }) => {
+  const [currentTime, setCurrentTime] = useState('');
+  const [greeting, setGreeting] = useState('');
+
+  const updateTimeAndGreeting = () => {
+    const now = new Date();
+    const hour = now.getHours();
+
+    if (hour < 12) {
+      setGreeting('Good Morning');
+    } else if (hour < 16) {
+      setGreeting('Good Afternoon');
+    } else {
+      setGreeting('Good Evening');
+    }
+
+    setCurrentTime(
+  `${formatDate(now)} ${now.toLocaleTimeString()}`
+);
+  };
+
+  useEffect(() => {
+    updateTimeAndGreeting(); // run immediately
+
+    const interval = setInterval(updateTimeAndGreeting, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+const formatDate = (date: Date) => {
+  const day = date.getDate();
+
+  const getOrdinal = (n: number) => {
+    if (n > 3 && n < 21) return 'th';
+    switch (n % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
+  };
+
+  const month = date.toLocaleString('default', { month: 'short' });
+  const year = date.getFullYear();
+
+  return `${day}${getOrdinal(day)} ${month} ${year}`;
+};
   return (
     <Card className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 md:p-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex-1">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">Good Morning, Shekhar</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">
+            {greeting}{ownerName ? `, ${ownerName}` : ''}
+          </h2>
+
           <p className="text-purple-100 text-sm md:text-base mb-4">
-            You have 15+ invoices saved to draft that has to send to customers
+            Welcome back{storeName ? ` to ${storeName}` : ''}.
           </p>
-          <p className="text-purple-200 text-xs md:text-sm">
-            Friday, 24 Mar 2025 11:24 AM
+
+          <p className="text-purple-200 text-xs md:text-base">
+            {currentTime}
           </p>
         </div>
+
         <div className="hidden md:block">
-          {imageSrc ? (
+          {imageSrc && (
             <div className="w-32 h-32 relative">
               <Image
                 src={imageSrc}
@@ -34,26 +91,9 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
                 className="object-contain"
               />
             </div>
-          ) : (
-            <div className="w-32 h-32 bg-purple-500/20 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-20 h-20 text-white/50"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
           )}
         </div>
       </div>
     </Card>
   );
 };
-

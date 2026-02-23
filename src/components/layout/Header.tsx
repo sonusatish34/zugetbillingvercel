@@ -167,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </div>
 
           {/* Date Range Picker */}
-          <div className="hidden lg:block w-56 lg:w-72">
+          <div className="hidden lg:block w-56 lg:w-64">
             <DateRangePicker
               value={dateRange}
               onChange={setDateRange}
@@ -203,14 +203,14 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </div>
 
           {/* Create New Button */}
-          <Button
+          {/* <Button
             variant="primary"
             size="sm"
             className="hidden lg:flex items-center gap-2 text-sm md:text-base"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden xl:inline">Create New</span>
-          </Button>
+          </Button> */}
         </div>
       </div>
     </header>

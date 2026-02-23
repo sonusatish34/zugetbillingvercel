@@ -23,10 +23,10 @@ export default function AddItemPage() {
         <h1 className="text-2xl font-bold text-primary mb-6">Add Item</h1>
         <AddItemForm onCancel={handleCancel} onSubmit={handleSubmit} />
       </div>
-      
+
       {/* Footer */}
       <footer className="flex flex-col sm:flex-row items-center justify-between py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-slate-700 mt-8 gap-2">
-        <p>© 2025 ZuGet, All Rights Reserved</p>
+        <p>© 2026 ZuGet, All Rights Reserved</p>
         <p>Version: 1.3.8</p>
       </footer>
     </main>

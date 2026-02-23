@@ -29,6 +29,7 @@ const Login = ({ role = "user" }) => {
   const [otpValidated, setOtpValidated] = useState(false);
   const [otpError, setOtpError] = useState("");
   const [resendotp, setResendOtp] = useState(0);
+  const [selectedRole, setSelectedRole] = useState("guest");
 
   useEffect(() => {
     function clearLocalStorageIfNewDay() {
@@ -60,7 +61,7 @@ const Login = ({ role = "user" }) => {
 
     if (usermobile && usertoken) {
       // Already logged in
-      router.push("/dashboard");
+      router.push("/");
       return;
     }
 
@@ -189,7 +190,7 @@ const Login = ({ role = "user" }) => {
         setOtpValidated(true);
         window.localStorage.setItem("user_phone", phoneNumber);
         window.localStorage.setItem(`${phoneNumber}_token`, data.jwt_token);
-        router.push("/dashboard");
+        router.push("/");
       } else {
         setOtpError("Invalid OTP.");
       }
@@ -226,13 +227,13 @@ const Login = ({ role = "user" }) => {
       <div className="flex justify-center items-center h-full w-full">
         <div className="flex flex-col lg:flex-row justify-center items-center">
           <div className="bg-black xl:h-[500px] xl:w-[500px] lg:h-[400px] lg:w-[400px] h-[150px] w-full lg:rounded-l-md rounded-tl-md rounded-tr-md lg:rounded-tr-none ">
-            <Image width={1000} height={1000} src={'/images/logo.png'} alt="dkmsmd"/>
+            <Image className="xl:h-[500px] xl:w-[500px] lg:h-[400px] lg:w-[400px] h-[150px] w-full" width={1000} height={1000} src={'/images/logo.png'} alt="dkmsmd" />
           </div>
 
           {!otpSuccess ? (
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col lg:gap-y-7 gap-y-4 justify-center items-left bg-white xl:h-[500px] xl:w-[550px] h-[250px] w-full lg:h-[400px] lg:w-[500px] lg:px-14 lg:p-6 px-2 lg:rounded-r-md rounded-br-md rounded-bl-md lg:rounded-bl-none  shadow-lg"
+              className="flex flex-col lg:gap-y-7 gap-y-4 justify-center items-left bg-white dark:bg-black dark:text-white xl:h-[500px] xl:w-[550px] h-[250px] w-full lg:h-[400px] lg:w-[500px] lg:px-14 lg:p-6 px-2 lg:rounded-r-md rounded-br-md rounded-bl-md lg:rounded-bl-none  shadow-lg"
             >
               {/* <Link className="text-purple-600 w-fit font-semibold hover:underline" href={'/approval-login'}>
                 Approval Team Login
@@ -240,7 +241,7 @@ const Login = ({ role = "user" }) => {
               <p className="font-bold xl:text-2xl lg:text-xl text-lg">
                 {role === "approval" && "Approval Team"}
               </p>
-              <p className="font-bold xl:text-5xl lg:text-4xl text-xl text-black">
+              <p className="font-bold xl:text-5xl lg:text-4xl text-xl text-black dark:text-white">
                 Please Login!
               </p>
               <input
@@ -254,13 +255,30 @@ const Login = ({ role = "user" }) => {
                     setError("");
                   }
                 }}
-                className="rounded-md outline-none bg-[#F5F5F5] text-black placeholder-black placeholder:text-base lg:text-2xl text-xl p-3"
+                className="rounded-xl outline-none bg-[#F5F5F5] text-black placeholder-black placeholder:text-base lg:text-2xl text-xl py-4 pl-4 tracking-wider"
                 placeholder="Enter your WhatsApp number"
                 maxLength={10}
               />
+              {/* Role Dropdown */}
+              {/* <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Select Role
+                </label>
+
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="w-full bg-gray-100 text-black p-4 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 transition"
+                >
+                  <option value="store_admin">Store Admin</option>
+                  <option value="employee">Employee</option>
+                  <option value="guest">Guest</option>
+                </select>
+              </div> */}
               {error && (
                 <p className="text-xs lg:text-lg text-red-400">{error}</p>
               )}
+
               <button
                 type="submit"
                 className="w-full bg-[#793FDF] text-white py-2 rounded-md cursor-pointer hover:opacity-90 transition"

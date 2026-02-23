@@ -75,9 +75,9 @@ export default function PaymentsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-primary">Payments</h1>
         <div className="flex items-center gap-3" role="toolbar" aria-label="Payment actions">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="h-10 px-4"
             aria-label="Export payments"
             type="button"
@@ -85,9 +85,9 @@ export default function PaymentsPage() {
             <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
             <span>Export</span>
           </Button>
-          <Button 
-            variant="primary" 
-            size="sm" 
+          <Button
+            variant="primary"
+            size="sm"
             className="h-10 px-4"
             aria-label="Add new payment"
             type="button"
@@ -106,7 +106,7 @@ export default function PaymentsPage() {
 
       {/* Footer */}
       <footer className="flex flex-col sm:flex-row items-center justify-between py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-slate-700 mt-8 gap-2">
-        <p>© 2025 ZuGet, All Rights Reserved</p>
+        <p>© 2026 ZuGet, All Rights Reserved</p>
         <p>Version: 1.3.8</p>
       </footer>
     </main>
