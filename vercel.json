@@ -1,4 +1,5 @@
 {
   "buildCommand": "next build",
-  "outputDirectory": ".next/standalone"
+  "outputDirectory": ".next/standalone",
+  "publicPath": "public"
 }

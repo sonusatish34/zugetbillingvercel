@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-const nextConfig = ({
-  turbopack: { root: "./" },
-} as unknown) as NextConfig;
+const nextConfig: NextConfig = {
+  /* config options here */
+};
 
 export default nextConfig;
