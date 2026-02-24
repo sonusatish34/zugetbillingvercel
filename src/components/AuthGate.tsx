@@ -9,10 +9,18 @@ export default function AuthGate({
   children: React.ReactNode;
 }) {
   const [ready, setReady] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
+  // Handle hydration - only run auth check after component mounts
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     // Allow login pages without auth
     if (pathname === "/login" || pathname === "/approval-login") {
       setReady(true);
@@ -29,9 +37,10 @@ export default function AuthGate({
     }
 
     setReady(true);
-  }, [router, pathname]);
+  }, [router, pathname, isMounted]);
 
-  if (!ready) return null;
+  // During SSR and hydration, render nothing to prevent mismatch
+  if (!isMounted || !ready) return null;
 
   return <>{children}</>;
 }
