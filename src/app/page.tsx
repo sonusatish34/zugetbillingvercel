@@ -34,30 +34,30 @@ export default function Dashboard() {
   const [welcomeData, setWelcomeData] = useState<MerchantHomeData | null>(null)
   console.log(welcomeData, 'welcjneddata');
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const response = await fetch(
-          "http://dev.zuget.com/admin/merchant-home",
-          {
-            method: "GET",
-            headers: {
-              accept: "application/json",
-              Authorization: localStorage.getItem(`${localStorage.getItem("user_phone")}_token`) || "",
-            },
-          }
-        );
+  // useEffect(() => {
+  //   async function checkAuth() {
+  //     try {
+  //       const response = await fetch(
+  //         "http://dev.zuget.com/admin/merchant-home",
+  //         {
+  //           method: "GET",
+  //           headers: {
+  //             accept: "application/json",
+  //             Authorization: localStorage.getItem(`${localStorage.getItem("user_phone")}_token`) || "",
+  //           },
+  //         }
+  //       );
 
-        const result: MerchantHomeResponse = await response.json();
-        setWelcomeData(result.data);
-        localStorage.setItem("store_id", result.data.store_id);
-      } catch (error) {
-        console.error(error);
-      }
-    }
+  //       const result: MerchantHomeResponse = await response.json();
+  //       setWelcomeData(result.data);
+  //       localStorage.setItem("store_id", result.data.store_id);
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   }
 
-    checkAuth();
-  }, []);
+  //   checkAuth();
+  // }, []);
 
   // Mock data matching the image
   const overviewStats = {
