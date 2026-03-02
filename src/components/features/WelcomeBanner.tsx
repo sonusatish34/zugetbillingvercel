@@ -82,13 +82,13 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
 
         <div className="hidden md:block shrink-0">
           {imageSrc && (
-            <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 relative">
+            <div className="w-24 h-32 sm:w-28 sm:h-28 md:w-48 lg:h-48 relative ">
               <Image
                 src={imageSrc}
                 alt={imageAlt}
-                width={128}
-                height={128}
-                className="object-contain"
+                width={400}
+                height={408}
+                className="object-contain w-full h-full rounded-md"
               />
             </div>
           )}

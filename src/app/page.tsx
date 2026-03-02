@@ -253,6 +253,7 @@ export default function Dashboard() {
         storeName={welcomeData?.store_name}
         storeId={welcomeData?.store_id}
         ownerName={welcomeData?.owner_name}
+        imageSrc={"/homemerch.webp"}
       />
 
       {/* Overview Cards Row */}

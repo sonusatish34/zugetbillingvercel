@@ -212,9 +212,9 @@ function UploadCard({ item }: { item: UploadItem }) {
       <a
         href={item.xlsx_link}
         target="_blank"
-        className="p-2 rounded-full bg-purple-600 hover:bg-gray-100 flex items-center gap-x-2 text-white"
+        className="p-2 rounded-full bg-purple-600  flex items-center gap-x-2 text-white hover:scale-90"
       >
-        <Download size={20} />
+        <Download size={20}  className=""/>
         <button>Sample File</button>
       </a>
     </div>

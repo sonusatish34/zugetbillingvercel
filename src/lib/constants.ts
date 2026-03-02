@@ -25,7 +25,7 @@ export const SIDEBAR_MENU = {
   inventory: {
     label: "Inventory",
     children: [
-      { label: "Total Items", href: "/inventory/total" },
+      { label: "Bar Code Pending", href: "/inventory/total" },
       { label: "Upload CSV", href: "/inventory/upload" },
       { label: "Zip to CSV Converter", href: "/inventory/ziptocsv" },
       { label: "Low Quantity Item", href: "/inventory/low-quantity" },
