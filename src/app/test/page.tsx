@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 /* ================== CONFIG ================== */
 const API_BASE = "https://dev.zuget.com";
-const API_URL = "http://dev.zuget.com/admin/add-items";
+const API_URL = "https://dev.zuget.com/admin/add-items";
 
 /* ================== TYPES ================== */
 interface Option {
@@ -184,7 +184,7 @@ export default function AddItemPage() {
     try {
       const lines = bulkCsv.trim().split('\n').filter(line => line.trim());
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      
+
       const rows: BulkRow[] = [];
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
@@ -192,7 +192,7 @@ export default function AddItemPage() {
         headers.forEach((header, idx) => {
           row[header] = values[idx] || '';
         });
-        
+
         // Validate required fields
         if (!row.title || !row.item_name || !row.brand) {
           alert(`Missing required fields in row ${i + 1}`);
@@ -398,33 +398,29 @@ export default function AddItemPage() {
 
         {/* Main Container */}
         <div className="bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl border border-white/50 p-8">
-          
+
           {/* TABS */}
           <div className="flex border-b border-slate-200 mb-10 pb-4">
             <button
               onClick={() => setActiveTab("single")}
-              className={`px-8 py-3 rounded-t-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                activeTab === "single"
+              className={`px-8 py-3 rounded-t-xl font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === "single"
                   ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-lg shadow-indigo-500/25 -mb-px z-10"
                   : "text-slate-600 hover:text-indigo-600 hover:bg-slate-50"
-              }`}
+                }`}
             >
-              <div className={`w-3 h-3 rounded-full ${
-                activeTab === "single" ? "bg-white/30" : "bg-indigo-400/50"
-              }`}></div>
+              <div className={`w-3 h-3 rounded-full ${activeTab === "single" ? "bg-white/30" : "bg-indigo-400/50"
+                }`}></div>
               Single Upload
             </button>
             <button
               onClick={() => setActiveTab("bulk")}
-              className={`px-8 py-3 rounded-t-xl font-semibold ml-2 transition-all duration-300 flex items-center gap-2 ${
-                activeTab === "bulk"
+              className={`px-8 py-3 rounded-t-xl font-semibold ml-2 transition-all duration-300 flex items-center gap-2 ${activeTab === "bulk"
                   ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 -mb-px z-10"
                   : "text-slate-600 hover:text-emerald-600 hover:bg-slate-50"
-              }`}
+                }`}
             >
-              <div className={`w-3 h-3 rounded-full ${
-                activeTab === "bulk" ? "bg-white/30" : "bg-emerald-400/50"
-              }`}></div>
+              <div className={`w-3 h-3 rounded-full ${activeTab === "bulk" ? "bg-white/30" : "bg-emerald-400/50"
+                }`}></div>
               Bulk Upload (CSV)
             </button>
           </div>
@@ -435,29 +431,29 @@ export default function AddItemPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Product Title</label>
-                  <input 
-                    className="input-field" 
-                    placeholder="Enter product title" 
+                  <input
+                    className="input-field"
+                    placeholder="Enter product title"
                     value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })} 
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Brand</label>
-                  <input 
-                    className="input-field" 
-                    placeholder="Enter brand name" 
+                  <input
+                    className="input-field"
+                    placeholder="Enter brand name"
                     value={form.brand}
-                    onChange={(e) => setForm({ ...form, brand: e.target.value })} 
+                    onChange={(e) => setForm({ ...form, brand: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Item Name</label>
-                  <input 
-                    className="input-field" 
-                    placeholder="Enter item name" 
+                  <input
+                    className="input-field"
+                    placeholder="Enter item name"
                     value={form.item_name}
-                    onChange={(e) => setForm({ ...form, item_name: e.target.value })} 
+                    onChange={(e) => setForm({ ...form, item_name: e.target.value })}
                   />
                 </div>
               </div>
@@ -466,8 +462,8 @@ export default function AddItemPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Gender</label>
-                  <select 
-                    className="input-field" 
+                  <select
+                    className="input-field"
                     value={form.gender}
                     onChange={(e) => setForm({ ...form, gender: e.target.value })}
                   >
@@ -478,8 +474,8 @@ export default function AddItemPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Pattern</label>
-                  <select 
-                    className="input-field" 
+                  <select
+                    className="input-field"
                     value={form.pattern}
                     onChange={(e) => setForm({ ...form, pattern: e.target.value })}
                   >
@@ -491,8 +487,8 @@ export default function AddItemPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Fabric</label>
-                  <select 
-                    className="input-field" 
+                  <select
+                    className="input-field"
                     value={form.fabric}
                     onChange={(e) => setForm({ ...form, fabric: e.target.value })}
                   >
@@ -504,8 +500,8 @@ export default function AddItemPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Fit</label>
-                  <select 
-                    className="input-field" 
+                  <select
+                    className="input-field"
                     value={form.fit}
                     onChange={(e) => setForm({ ...form, fit: e.target.value })}
                   >
@@ -625,19 +621,19 @@ export default function AddItemPage() {
                         <div key={s.size} className="size-card">
                           <div className="size-label">{s.size}</div>
                           <div className="space-y-2">
-                            <input 
-                              className="input-field size-input" 
-                              placeholder="Qty" 
-                              type="number" 
+                            <input
+                              className="input-field size-input"
+                              placeholder="Qty"
+                              type="number"
                               value={s.quantity}
-                              onChange={(e) => handleSizeChange(vIndex, i, "quantity", e.target.value)} 
+                              onChange={(e) => handleSizeChange(vIndex, i, "quantity", e.target.value)}
                             />
-                            <input 
-                              className="input-field size-input" 
-                              placeholder="₹ 0" 
-                              type="number" 
+                            <input
+                              className="input-field size-input"
+                              placeholder="₹ 0"
+                              type="number"
                               value={s.price}
-                              onChange={(e) => handleSizeChange(vIndex, i, "price", e.target.value)} 
+                              onChange={(e) => handleSizeChange(vIndex, i, "price", e.target.value)}
                             />
                           </div>
                         </div>

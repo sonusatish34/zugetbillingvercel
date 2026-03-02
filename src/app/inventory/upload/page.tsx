@@ -5,7 +5,7 @@ import { FileUp, ChevronRight } from "lucide-react";
 
 /* ================== CONFIG ================== */
 const API_BASE = "https://dev.zuget.com";
-const API_URL = "http://dev.zuget.com/admin/add-items";
+const API_URL = "https://dev.zuget.com/admin/add-items";
 
 /* ================== TYPES ================== */
 interface Option {
@@ -847,7 +847,7 @@ export default function AddItemPage() {
                   <label className="mt-4 font-semibold text-lg cursor-pointer w-full">
 
                     <p className="flex gap-x-2 justify-center"><FileUp size={28} />Upload CSV File
-                      </p>
+                    </p>
                     <input
                       type="file"
                       accept=".zip,.csv"

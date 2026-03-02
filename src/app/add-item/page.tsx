@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 /* ================== CONFIG ================== */
 const API_BASE = "https://dev.zuget.com";
-const API_URL = "http://dev.zuget.com/admin/add-items";
+const API_URL = "https://dev.zuget.com/admin/add-items";
 
 /* ================== TYPES ================== */
 interface Option {
@@ -184,7 +184,7 @@ export default function AddItemPage() {
     try {
       const lines = bulkCsv.trim().split('\n').filter(line => line.trim());
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      
+
       const rows: BulkRow[] = [];
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
@@ -192,7 +192,7 @@ export default function AddItemPage() {
         headers.forEach((header, idx) => {
           row[header] = values[idx] || '';
         });
-        
+
         // Validate required fields
         if (!row.title || !row.item_name || !row.brand) {
           alert(`Missing required fields in row ${i + 1}`);
@@ -407,30 +407,30 @@ export default function AddItemPage() {
         <>
           {/* SINGLE BASIC INFO */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <input 
-              className="input" 
-              placeholder="Title" 
+            <input
+              className="input"
+              placeholder="Title"
               value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })} 
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
-            <input 
-              className="input" 
-              placeholder="Brand" 
+            <input
+              className="input"
+              placeholder="Brand"
               value={form.brand}
-              onChange={(e) => setForm({ ...form, brand: e.target.value })} 
+              onChange={(e) => setForm({ ...form, brand: e.target.value })}
             />
-            <input 
-              className="input" 
-              placeholder="Item Name" 
+            <input
+              className="input"
+              placeholder="Item Name"
               value={form.item_name}
-              onChange={(e) => setForm({ ...form, item_name: e.target.value })} 
+              onChange={(e) => setForm({ ...form, item_name: e.target.value })}
             />
           </div>
 
           {/* SINGLE ATTRIBUTES */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <select 
-              className="input" 
+            <select
+              className="input"
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value })}
             >
@@ -439,8 +439,8 @@ export default function AddItemPage() {
               <option>Children</option>
             </select>
 
-            <select 
-              className="input" 
+            <select
+              className="input"
               value={form.pattern}
               onChange={(e) => setForm({ ...form, pattern: e.target.value })}
             >
@@ -450,8 +450,8 @@ export default function AddItemPage() {
               ))}
             </select>
 
-            <select 
-              className="input" 
+            <select
+              className="input"
               value={form.fabric}
               onChange={(e) => setForm({ ...form, fabric: e.target.value })}
             >
@@ -461,9 +461,9 @@ export default function AddItemPage() {
               ))}
             </select>
 
-            <select 
-            style={{border:'2px black solid'}}
-              className="input" 
+            <select
+              style={{ border: '2px black solid' }}
+              className="input"
               value={form.fit}
               onChange={(e) => setForm({ ...form, fit: e.target.value })}
             >
@@ -523,19 +523,19 @@ export default function AddItemPage() {
                 {variant.sizes.map((s, i) => (
                   <div key={s.size}>
                     <p>{s.size}</p>
-                    <input 
-                      className="input" 
-                      placeholder="Qty" 
-                      type="number" 
+                    <input
+                      className="input"
+                      placeholder="Qty"
+                      type="number"
                       value={s.quantity}
-                      onChange={(e) => handleSizeChange(vIndex, i, "quantity", e.target.value)} 
+                      onChange={(e) => handleSizeChange(vIndex, i, "quantity", e.target.value)}
                     />
-                    <input 
-                      className="input" 
-                      placeholder="Price" 
-                      type="number" 
+                    <input
+                      className="input"
+                      placeholder="Price"
+                      type="number"
                       value={s.price}
-                      onChange={(e) => handleSizeChange(vIndex, i, "price", e.target.value)} 
+                      onChange={(e) => handleSizeChange(vIndex, i, "price", e.target.value)}
                     />
                   </div>
                 ))}

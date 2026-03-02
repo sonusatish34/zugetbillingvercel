@@ -42,7 +42,7 @@ interface Order {
 }
 
 /* ================= CONFIG ================= */
-const API_URL = 'http://dev.zuget.com/admin/online-orders?status=booked';
+const API_URL = 'https://dev.zuget.com/admin/online-orders?status=booked';
 const PAGE_SIZE = 10;
 
 export default function TotalItemsPage() {
@@ -65,7 +65,7 @@ export default function TotalItemsPage() {
     try {
       const userPhone = localStorage.getItem('user_phone');
       const token = localStorage.getItem(`${userPhone}_token`) || '';
-      
+
       const res = await fetch(API_URL, {
         headers: {
           accept: 'application/json',
@@ -74,7 +74,7 @@ export default function TotalItemsPage() {
       });
 
       const json = await res.json();
-      
+
       if (json.status === 'success') {
         const results = json.data?.results || [];
         setTotalCount(results.length);
@@ -94,7 +94,7 @@ export default function TotalItemsPage() {
       accessorKey: '_id',
       cell: ({ row }) => `#${row.original._id}`,
     },
-    
+
     {
       header: 'Product',
       accessorKey: 'items_json',
@@ -107,7 +107,7 @@ export default function TotalItemsPage() {
                   src={item.item_image}
                   alt={item.item_name}
                   className="w-full h-full object-cover"
-                  
+
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -146,11 +146,10 @@ export default function TotalItemsPage() {
       header: 'Status',
       accessorKey: 'status',
       cell: ({ row }) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          row.original.status === 'booked' 
-            ? 'bg-blue-100 text-blue-800' 
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.original.status === 'booked'
+            ? 'bg-blue-100 text-blue-800'
             : 'bg-gray-100 text-gray-800'
-        }`}>
+          }`}>
           {row.original.status}
         </span>
       ),

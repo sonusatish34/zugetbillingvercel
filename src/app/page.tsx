@@ -44,7 +44,7 @@ export default function Dashboard() {
     async function checkAuth() {
       try {
         const response = await fetch(
-          "http://dev.zuget.com/admin/merchant-home",
+          "https://dev.zuget.com/admin/merchant-home",
           {
             method: "GET",
             headers: {
@@ -63,11 +63,11 @@ export default function Dashboard() {
       }
     }
     checkAuth();
-   
-   
+
+
   }, []);
   // console.log(todayOrd,'totoooooo');
-  
+
 
   // Mock data matching the image
   const overviewStats = {
@@ -244,7 +244,7 @@ export default function Dashboard() {
     { name: 'Nike T-shirt', value: 32, color: '#3b82f6' },
     { name: 'Apple iPhone 15', value: 30, color: '#10b981' },
   ];
- 
+
 
   return (
     <div className="space-y-4 sm:space-y-6">

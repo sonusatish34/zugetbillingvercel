@@ -40,7 +40,7 @@ interface Item {
 }
 
 /* ================= CONFIG ================= */
-const API_URL = 'http://dev.zuget.com/admin/total-items';
+const API_URL = 'https://dev.zuget.com/admin/total-items';
 const PAGE_SIZE = 10;
 
 export default function TotalItemsPage() {
@@ -468,7 +468,7 @@ export default function TotalItemsPage() {
         {/* Pagination */}
         <div className="flex items-center justify-between p-4 text-sm">
           <span>
-            Showing {offset*10 + 1}–{Math.min(offset+10 + PAGE_SIZE*10, offset*10 + items.length)} 
+            Showing {offset * 10 + 1}–{Math.min(offset + 10 + PAGE_SIZE * 10, offset * 10 + items.length)}
           </span>
 
           <div className="flex items-center justify-center gap-x-4">
@@ -476,9 +476,9 @@ export default function TotalItemsPage() {
               Prev
             </button>
             <span className='px-3 py-1 border rounded bg-blue-500 text-white font-bold'>{page}</span>
-            <button  onClick={() => setPage(1)} className="px-3 py-1 border rounded">1</button>
-            <button  onClick={() => setPage(2)} className="px-3 py-1 border rounded">2</button>
-            <button  onClick={() => setPage(3)} className="px-3 py-1 border rounded">3</button>
+            <button onClick={() => setPage(1)} className="px-3 py-1 border rounded">1</button>
+            <button onClick={() => setPage(2)} className="px-3 py-1 border rounded">2</button>
+            <button onClick={() => setPage(3)} className="px-3 py-1 border rounded">3</button>
             <button disabled={page === totalPages || items.length < PAGE_SIZE} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border rounded">
               Next
             </button>
