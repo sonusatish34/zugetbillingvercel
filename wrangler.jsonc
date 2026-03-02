@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zuget-biling-system",
+  "compatibility_date": "2025-09-27",
+  "main": ".open-next/worker.js",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "env": {
+    "WORKER_SELF_REFERENCE": "zuget-biling-system"
+  }
+}

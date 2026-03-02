@@ -1,279 +1,273 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTheme } from "@/contexts/ThemeContext";
 
-/* ================= CONFIG ================= */
-const ITEM_API = "http://dev.zuget.com/admin/item-details?item_id=1";
-const SAVE_API = "http://dev.zuget.com/admin/offline-order";
-const TAX_PERCENT = 18;
+const CGST_PERCENT = 9;
+const SGST_PERCENT = 9;
 
-/* ================= TYPES ================= */
-interface SizeData {
+interface Product {
+  id: string; // full barcode
+  name: string;
   size: string;
-  price: number;
-  quantity: number;
+  rate: number;
+  qty: number;
 }
 
-interface ItemDetails {
-  _id: number;
-  store_id: number;
-  title: string;
-  item_name: string;
-  brand: string;
-  gender: string;
-  color: string;
-  item_image: string;
-  size_data: SizeData[];
-}
-
-/* ================= PAGE ================= */
 export default function BillingSystem() {
-  const [item, setItem] = useState<ItemDetails | null>(null);
-  const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
-  const [qty, setQty] = useState(1);
+  const { theme } = useTheme();
+  const [products, setProducts] = useState<Product[]>([]);
   const [paymentMode, setPaymentMode] = useState("UPI");
-  const [saving, setSaving] = useState(false);
 
-  /* ===== FETCH ITEM ===== */
+  /* ================= BARCODE SCANNER ================= */
   useEffect(() => {
-    fetch(ITEM_API,{
-      headers: {
-        Authorization: localStorage.getItem(`${localStorage.getItem('user_phone')}_token`) || '',
-      },
-    })
-      .then(res => res.json())
-      .then(data => {
-        const details = data.data.item_details;
-        setItem(details);
-        setSelectedSize(details.size_data[0]); // default first size
-      })
-      .catch(() => alert("Failed to load item"));
-  }, []);
+    let buffer = "";
 
-  /* ===== CALCULATIONS ===== */
-  const unitPrice = selectedSize?.price || 0;
-  const subtotal = unitPrice * qty;
-  const tax = +(subtotal * TAX_PERCENT / 100).toFixed(2);
-  const total = +(subtotal + tax).toFixed(2);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (!buffer) return;
 
-  /* ===== SAVE OFFLINE ORDER ===== */
-  const handleSaveOrder = async () => {
-  if (!item || !selectedSize) return;
+        const parts = buffer.split("-");
+        if (parts.length !== 4) {
+          alert("Invalid Barcode (Use: 24-113-XXL-500)");
+          buffer = "";
+          return;
+        }
 
-  try {
-    setSaving(true);
+        const [storeId, itemId, size, price] = parts;
+        const barcodeId = buffer;
 
-    const payload = {
-      items_json: [
-        {
-          _id: item._id,
-          store_id: item.store_id,
-          title: item.title,
-          brand: item.brand,
-          item_name: item.item_name,
-          item_image: item.item_image,
-          item_video: null, // API expects this
-          store_name: "Walk-in Store", // required by API
-          sizeData: [
+        setProducts((prev) => {
+          const existing = prev.find((p) => p.id === barcodeId);
+
+          if (existing) {
+            return prev.map((p) =>
+              p.id === barcodeId ? { ...p, qty: p.qty + 1 } : p
+            );
+          }
+
+          return [
+            ...prev,
             {
-              size: selectedSize.size,
-              price: selectedSize.price,
-              quantity: selectedSize.quantity, // AVAILABLE qty from API
+              id: barcodeId,
+              name: `Item ${itemId}`,
+              size,
+              rate: Number(price),
+              qty: 1,
             },
-          ],
-          color: item.color,
-          price: selectedSize.price,
-          size: selectedSize.size,
-          quantity: qty, // ORDERED qty
-          gender: item.gender,
-        },
-      ],
-      discount_applied: 0,
-      product_price: selectedSize.price * qty,
-      final_amount: selectedSize.price * qty,
-      name: "Walk-in Customer",
-      mobile: "9999999999",
-      payment_method: paymentMode,
+          ];
+        });
+
+        buffer = "";
+        return;
+      }
+
+      if (e.key.length === 1) {
+        buffer += e.key;
+      }
     };
 
-    const res = await fetch(SAVE_API, {
-      method: "POST",
-      headers: {
-        Authorization:
-          localStorage.getItem(`${localStorage.getItem("user_phone")}_token`) || "",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
+  /* ================= CALCULATIONS ================= */
 
-    alert(`✅ Order Saved\nInvoice: ${data.data.invoice_number}`);
-  } catch (err: any) {
-    alert("❌ " + err.message);
-  } finally {
-    setSaving(false);
-  }
-};
+  const subtotal = products.reduce(
+    (sum, p) => sum + p.rate * p.qty,
+    0
+  );
 
+  const cgst = +(subtotal * CGST_PERCENT / 100).toFixed(2);
+  const sgst = +(subtotal * SGST_PERCENT / 100).toFixed(2);
+  const total = +(subtotal + cgst + sgst).toFixed(2);
 
+  const updateQty = (id: string, qty: number) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, qty } : p))
+    );
+  };
+
+  const removeItem = (id: string) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+  };
+  const [storeName, setStoreName] = useState('dsdsd');
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-6">
-      {/* HEADER */}
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-lg cursor-pointer">←</span>
-        <h1 className="text-lg font-semibold">Billing System</h1>
-      </div>
+    <div
+      className={`min-h-screen max-w-3xl p-6 transition-colors duration-300 ${theme === "dark" ? "bg-slate-950 text-gray-100" : "bg-white text-gray-900"}`}
+    >
+      <div
+        className={`rounded-lg shadow p-6 transition-colors duration-300 ${theme === "dark" ? "bg-slate-900 text-gray-100" : "bg-white text-gray-900"}`}
+      >
+        {/* <div className="mb-4">
+          <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
+            Current theme: {theme}
+          </span>
+        </div> */}
+        <div className="flex justify-between">
+          <div className="mb-4 border border-gray-100 dark:border-slate-700 p-4 rounded">
+            <p className="text-xs bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-bold">
+              Billed From
+            </p>
+            <div className="text-xs bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 ">
+              <p className="flex flex-col gap-y-2 pt-4">
+                <label> Billed By</label>
+                <input className="bg-gray-100 outline-none p-2 capitalize" placeholder={localStorage.getItem('store_name') || 'n/a'} type="text" />
+              </p>
+            </div>
+          </div>
+          <div className="mb-4 border border-gray-100 dark:border-slate-700 p-4 rounded">
+            <p className="text-xs bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-bold">
+              Billed To
+            </p>
+            <div className="text-xs bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 ">
+              <p className="flex flex-col gap-y-2 pt-4">
+                <label> Customer Number</label>
+                <input className="bg-gray-100 outline-none p-2" placeholder="number here" type="text" />
+              </p>
+              <p className="flex flex-col gap-y-2 pt-4">
+                <label> Customer Number</label>
+                <input className="bg-gray-100 outline-none p-2" placeholder="number here" type="text" />
+              </p>
 
-      {/* BILL FROM / TO */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <Card title="Bill From">
-          <Input label="Billed By" value="Mens Store" readOnly />
-        </Card>
+            </div>
+          </div>
+        </div>
 
-        <Card title="Bill To">
-          <Input label="Customer Name" placeholder="Enter name" />
-          <Input label="Customer Mobile" placeholder="Enter number" />
-        </Card>
-      </div>
 
-      {/* ITEMS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT */}
-        <div className="lg:col-span-2">
-          <Card title="Items & Details">
-            <table className="w-full text-sm border">
-              <thead className="bg-gray-900 text-white">
-                <tr>
-                  {["Product", "Size", "Available", "Qty", "Rate", "Tax", "Amount"].map(h => (
-                    <th key={h} className="px-2 py-2 text-left">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t">
-                  <td className="px-2 py-2">
-                    {item?.item_name}
-                    <div className="text-xs text-gray-400">{item?.brand}</div>
+
+        {/* HEADER */}
+        <h2 className="font-semibold text-lg mb-6 text-gray-900 dark:text-white">
+          Items & Details
+        </h2>
+
+        {/* TABLE */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-gray-200 dark:border-slate-700">
+            <thead className="bg-gray-900 text-white dark:bg-slate-800 dark:text-gray-100">
+              <tr>
+                <th className="p-2 text-left">Product/Service</th>
+                <th className="p-2">Quantity</th>
+                <th className="p-2">Unit</th>
+                <th className="p-2">Rate</th>
+                <th className="p-2">Tax (%)</th>
+                <th className="p-2">Amount</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((p) => (
+                <tr key={p.id} className="border-t border-gray-200 dark:border-slate-700">
+                  <td className="p-2 text-gray-900 dark:text-gray-100">
+                    {p.name}
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Size: {p.size}
+                    </div>
                   </td>
 
-                  <td className="px-2 py-2">
-                    <select
-                      value={selectedSize?.size}
-                      onChange={e => {
-                        const size = item?.size_data.find(
-                          s => s.size === e.target.value
-                        );
-                        setSelectedSize(size || null);
-                        setQty(1);
-                      }}
-                      className="border rounded px-2 py-1 bg-transparent"
-                    >
-                      {item?.size_data.map(s => (
-                        <option key={s.size} value={s.size}>
-                          {s.size}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-
-                  <td className="px-2 py-2">
-                    {selectedSize?.quantity}
-                  </td>
-
-                  <td className="px-2 py-2">
+                  <td className="p-2 text-center">
                     <input
                       type="number"
                       min={1}
-                      max={selectedSize?.quantity}
-                      value={qty}
-                      onChange={e => setQty(+e.target.value)}
-                      className="w-16 border rounded px-2 py-1 bg-transparent"
+                      value={p.qty}
+                      onChange={(e) =>
+                        updateQty(p.id, Number(e.target.value))
+                      }
+                      className="w-16 border rounded px-2 py-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
                     />
                   </td>
 
-                  <td className="px-2 py-2">₹{unitPrice}</td>
-                  <td className="px-2 py-2">{TAX_PERCENT}%</td>
-                  <td className="px-2 py-2 font-semibold">₹{total}</td>
-                </tr>
-              </tbody>
-            </table>
-          </Card>
+                  <td className="p-2 text-center text-gray-700 dark:text-gray-300">Pcs</td>
 
-          <Card title="Payment" className="mt-6">
-            <Select
-              label="Payment Mode"
-              value={paymentMode}
-              onChange={(e: any) => setPaymentMode(e.target.value)}
-              options={["UPI", "Cash", "Card"]}
-            />
-          </Card>
+                  <td className="p-2 text-center text-gray-700 dark:text-gray-300">
+                    ${p.rate.toFixed(2)}
+                  </td>
+
+                  <td className="p-2 text-center text-gray-700 dark:text-gray-300">
+                    {CGST_PERCENT + SGST_PERCENT}
+                  </td>
+
+                  <td className="p-2 text-center text-gray-700 dark:text-gray-300">
+                    ${(p.rate * p.qty).toFixed(2)}
+                  </td>
+
+                  <td className="p-2 text-center">
+                    <button
+                      onClick={() => removeItem(p.id)}
+                      className="text-red-500 dark:text-red-400"
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {products.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="text-center p-6 text-gray-400 dark:text-gray-500"
+                  >
+                    Scan barcode to add product
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {/* SUMMARY */}
-        <Card>
-          <SummaryRow label="Subtotal" value={`₹${subtotal}`} />
-          <SummaryRow label={`GST (${TAX_PERCENT}%)`} value={`₹${tax}`} />
+        {/* SUMMARY SECTION */}
+        <div className="grid grid-cols-2 gap-8 mt-8">
 
-          <div className="border-t mt-4 pt-3">
-            <div className="flex justify-between text-lg font-semibold">
-              <span>Total</span>
+          <div></div>
+
+          <div className="text-sm space-y-2 text-gray-900 dark:text-gray-100">
+            <div className="flex justify-between">
+              <span>Amount</span>
+              <span>₹{subtotal.toFixed(2)}</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>CGST (9%)</span>
+              <span>₹{cgst}</span>
+            </div>
+
+            <div className="flex justify-between">
+              <span>SGST (9%)</span>
+              <span>₹{sgst}</span>
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-slate-700 pt-3 flex justify-between font-semibold text-lg">
+              <span>Total (USD)</span>
               <span>₹{total}</span>
             </div>
           </div>
+        </div>
 
-          <button
-            disabled={saving}
-            onClick={handleSaveOrder}
-            className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded disabled:opacity-50"
+        {/* PAYMENT MODE */}
+        <div className="mt-6">
+          <label className="text-sm text-gray-900 dark:text-gray-100">Payment Mode</label>
+          <select
+            value={paymentMode}
+            onChange={(e) => setPaymentMode(e.target.value)}
+            className="w-full mt-1 border rounded px-3 py-2 bg-white dark:bg-slate-800 text-gray-900 dark:text-white border-gray-300 dark:border-slate-600"
           >
-            {saving ? "Saving..." : "Save Offline Order"}
+            <option>UPI</option>
+            <option>Cash</option>
+            <option>Card</option>
+          </select>
+        </div>
+
+        {/* FOOTER BUTTONS */}
+        <div className="flex justify-end gap-4 mt-8">
+          <button className="px-4 py-2 border rounded border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
+            Cancel
           </button>
-        </Card>
+          <button className="px-4 py-2 bg-purple-600 dark:bg-purple-500 text-white rounded hover:bg-purple-700 dark:hover:bg-purple-400">
+            Save
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
-
-/* ================= UI COMPONENTS ================= */
-
-function Card({ title, children, className = "" }: any) {
-  return (
-    <div className={`bg-white dark:bg-slate-800 border rounded-lg p-4 ${className}`}>
-      {title && <h2 className="font-medium mb-4">{title}</h2>}
-      {children}
-    </div>
-  );
-}
-
-function Input(props: any) {
-  return (
-    <div className="mb-3">
-      <label className="text-xs text-gray-500">{props.label}</label>
-      <input {...props} className="w-full mt-1 px-3 py-2 rounded bg-gray-400/10" />
-    </div>
-  );
-}
-
-function Select({ label, options, ...props }: any) {
-  return (
-    <div className="mb-3">
-      <label className="text-xs text-gray-500">{label}</label>
-      <select {...props} className="w-full mt-1 px-3 py-2 border rounded bg-transparent">
-        {options.map((o: string) => (
-          <option key={o}>{o}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function SummaryRow({ label, value }: any) {
-  return (
-    <div className="flex justify-between text-sm mb-2">
-      <span>{label}</span>
-      <span>{value}</span>
     </div>
   );
 }

@@ -462,6 +462,7 @@ export default function AddItemPage() {
             </select>
 
             <select 
+            style={{border:'2px black solid'}}
               className="input" 
               value={form.fit}
               onChange={(e) => setForm({ ...form, fit: e.target.value })}

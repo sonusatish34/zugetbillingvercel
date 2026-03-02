@@ -44,11 +44,10 @@ const OrderTableRow = memo<{ order: OrderItem; showOrderFrom?: boolean; showAmou
     )}
     {showAmountStatus && order.amountStatus && (
       <td className="table-cell" role="gridcell">
-        <span className={`px-2 py-1 rounded text-xs ${
-          order.amountStatus === 'Received' 
-            ? 'badge-success' 
+        <span className={`px-2 py-1 rounded text-xs ${order.amountStatus === 'Received'
+            ? 'badge-success'
             : 'badge-info'
-        }`}>
+          }`}>
           {order.amountStatus}
         </span>
       </td>
@@ -73,11 +72,10 @@ const PaginationButton = memo<{
     onClick={onClick}
     aria-label={`Go to page ${page}`}
     aria-current={isActive ? 'page' : undefined}
-    className={`h-9 w-9 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-      isActive
+    className={`h-8 sm:h-9 w-8 sm:w-9 rounded-lg text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${isActive
         ? 'bg-purple-600 text-white'
         : 'text-secondary hover:bg-gray-100 dark:hover:bg-slate-800'
-    }`}
+      }`}
   >
     <span className="sr-only">{isActive ? 'Current page' : ''}</span>
     {page}
@@ -168,37 +166,37 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({ orders, title, showOrd
   const columnCount = 7 + (hasPickupTime ? 1 : 0) + (showOrderFrom ? 1 : 0) + (showAmountStatus ? 1 : 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Page Title and Action Buttons */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-primary">{title}</h1>
-        <div className="flex items-center gap-3" role="toolbar" aria-label="Order actions">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="h-10 px-4"
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <h1 className="text-lg sm:text-2xl font-bold text-primary">{title}</h1>
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto" role="toolbar" aria-label="Order actions">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4"
             aria-label="Export orders"
             type="button"
           >
-            <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
-            <span>Export</span>
+            <Upload className="w-3 h-3 sm:w-4 sm:h-4 mr-2" aria-hidden="true" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
-          <Button 
-            variant="primary" 
-            size="sm" 
-            className="h-10 px-4"
+          <Button
+            variant="primary"
+            size="sm"
+            className="flex-1 sm:flex-none h-9 sm:h-10 px-3 sm:px-4"
             aria-label="Add new item"
             type="button"
           >
-            <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
-            <span ><Link href={'/test'}>Add Item</Link> </span>
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-2" aria-hidden="true" />
+            <span><Link href={'/test'} className="hidden sm:inline">Add Item</Link><span className="sm:hidden">Add</span></span>
           </Button>
         </div>
       </div>
 
       {/* Search, Filter, and Sort Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3" role="search" aria-label="Search and filter orders">
-        <div className="flex-1">
+      <div className="flex flex-col gap-2 sm:gap-3">
+        <div className="w-full">
           <label htmlFor="order-search" className="sr-only">
             Search orders by product name, category, ID, or status
           </label>
@@ -209,7 +207,7 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({ orders, title, showOrd
             value={searchQuery}
             onChange={handleSearchChange}
             icon={<Search className="w-4 h-4" aria-hidden="true" />}
-            className="w-full"
+            className="w-full text-sm"
             aria-label="Search orders"
             aria-describedby="search-description"
           />
@@ -217,104 +215,108 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({ orders, title, showOrd
             Search orders by product name, category, ID, or status
           </span>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="h-10 px-4"
-          aria-label="Open filter options"
-          type="button"
-        >
-          <Filter className="w-4 h-4 mr-2" aria-hidden="true" />
-          <span>Filter</span>
-        </Button>
-        <div className="flex items-center gap-2">
-          <label htmlFor="sort-select" className="text-sm text-secondary whitespace-nowrap">
-            Sort by:
-          </label>
-          <select
-            id="sort-select"
-            value={sortBy}
-            onChange={handleSortChange}
-            className="input-base h-10 px-3 text-sm min-w-[120px]"
-            aria-label="Sort orders"
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto h-9 sm:h-10 px-3 sm:px-4"
+            aria-label="Open filter options"
+            type="button"
           >
-            <option value="latest">Latest</option>
-            <option value="name">Name</option>
-            <option value="status">Status</option>
-          </select>
+            <Filter className="w-3 h-3 sm:w-4 sm:h-4 mr-2" aria-hidden="true" />
+            <span className="text-xs sm:text-sm">Filter</span>
+          </Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <label htmlFor="sort-select" className="text-xs sm:text-sm text-secondary whitespace-nowrap">
+              Sort:
+            </label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={handleSortChange}
+              className="input-base h-9 sm:h-10 px-3 text-xs sm:text-sm min-w-24 flex-1 sm:flex-none"
+              aria-label="Sort orders"
+            >
+              <option value="latest">Latest</option>
+              <option value="name">Name</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table 
-              className="w-full"
-              role="table"
-              aria-label={`${title} table`}
-              aria-rowcount={sortedOrders.length}
-            >
-              <caption className="sr-only">
-                Table showing {title.toLowerCase()} with ID, product name, category, quantity, price, order created time, and order status
-              </caption>
-              <thead>
-                <tr role="row">
-                  <th className="table-header" scope="col" role="columnheader">Id</th>
-                  <th className="table-header" scope="col" role="columnheader">Product</th>
-                  <th className="table-header" scope="col" role="columnheader">Category</th>
-                  <th className="table-header" scope="col" role="columnheader">Quantity</th>
-                  <th className="table-header" scope="col" role="columnheader">Price</th>
-                  <th className="table-header" scope="col" role="columnheader">Order Created Time</th>
-                  {orders[0]?.pickupTime && (
-                    <th className="table-header" scope="col" role="columnheader">Pickup Time</th>
-                  )}
-                  <th className="table-header" scope="col" role="columnheader">Order Status</th>
-                  {showOrderFrom && (
-                    <th className="table-header" scope="col" role="columnheader">Order From</th>
-                  )}
-                  {showAmountStatus && (
-                    <th className="table-header" scope="col" role="columnheader">Amount Status</th>
-                  )}
-                  <th className="table-header w-12" scope="col" role="columnheader">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedOrders.length > 0 ? (
-                  paginatedOrders.map((order) => (
-                    <OrderTableRow 
-                      key={order.id} 
-                      order={order} 
-                      showOrderFrom={showOrderFrom}
-                      showAmountStatus={showAmountStatus}
-                    />
-                  ))
-                ) : (
+          <div className="overflow-x-auto -mx-3 sm:-mx-4 md:mx-0">
+            <div className="inline-block min-w-full px-3 sm:px-4 md:px-0">
+              <table
+                className="w-full text-xs sm:text-sm"
+                role="table"
+                aria-label={`${title} table`}
+                aria-rowcount={sortedOrders.length}
+              >
+                <caption className="sr-only">
+                  Table showing {title.toLowerCase()} with ID, product name, category, quantity, price, order created time, and order status
+                </caption>
+                <thead>
                   <tr role="row">
-                    <td colSpan={columnCount} className="table-cell text-center text-secondary py-8" role="gridcell">
-                      <span role="status" aria-live="polite">No orders found</span>
-                    </td>
+                    <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Id</th>
+                    <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Product</th>
+                    <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Category</th>
+                    <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Qty</th>
+                    <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Price</th>
+                    <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Created</th>
+                    {orders[0]?.pickupTime && (
+                      <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Pickup</th>
+                    )}
+                    <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Status</th>
+                    {showOrderFrom && (
+                      <th className="table-header whitespace-nowrap" scope="col" role="columnheader">From</th>
+                    )}
+                    {showAmountStatus && (
+                      <th className="table-header whitespace-nowrap" scope="col" role="columnheader">Amount</th>
+                    )}
+                    <th className="table-header w-8 sm:w-12" scope="col" role="columnheader">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedOrders.length > 0 ? (
+                    paginatedOrders.map((order) => (
+                      <OrderTableRow
+                        key={order.id}
+                        order={order}
+                        showOrderFrom={showOrderFrom}
+                        showAmountStatus={showAmountStatus}
+                      />
+                    ))
+                  ) : (
+                    <tr role="row">
+                      <td colSpan={columnCount} className="table-cell text-center text-secondary py-6 sm:py-8" role="gridcell">
+                        <span role="status" aria-live="polite">No orders found</span>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Pagination */}
       <nav aria-label={`${title} pagination`}>
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <label htmlFor="items-per-page" className="text-sm text-secondary">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 flex-wrap text-xs sm:text-sm">
+            <label htmlFor="items-per-page" className="text-secondary">
               Showing
             </label>
             <select
               id="items-per-page"
               value={itemsPerPage}
-              className="input-base h-9 px-2 text-sm min-w-[80px]"
+              className="input-base h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm min-w-16"
               aria-label="Items per page"
               disabled
             >
@@ -322,22 +324,22 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({ orders, title, showOrd
               <option value={20}>20</option>
               <option value={50}>50</option>
             </select>
-            <span className="text-sm text-secondary">Results</span>
+            <span className="text-secondary">Results</span>
           </div>
-          <div className="flex items-center gap-2" role="group" aria-label="Pagination controls">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap" role="group" aria-label="Pagination controls">
             <Button
               variant="outline"
               size="sm"
-              className="h-9 w-9 p-0"
+              className="h-8 sm:h-9 w-8 sm:w-9 p-0 text-xs sm:text-sm"
               onClick={handlePrevPage}
               disabled={currentPage === 1}
               aria-label="Go to previous page"
               type="button"
             >
-              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+              <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true" />
               <span className="sr-only">Previous page</span>
             </Button>
-            <div className="flex items-center gap-1" role="list" aria-label="Page numbers">
+            <div className="flex items-center gap-0.5 sm:gap-1 flex-wrap" role="list" aria-label="Page numbers">
               {paginationPages.map((page) => (
                 <div key={page} role="listitem">
                   <PaginationButton
@@ -349,7 +351,7 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({ orders, title, showOrd
               ))}
               {totalPages > 15 && (
                 <>
-                  <span className="px-2 text-secondary" aria-hidden="true">...</span>
+                  <span className="px-1 sm:px-2 text-secondary text-xs sm:text-sm" aria-hidden="true">...</span>
                   <div role="listitem">
                     <PaginationButton
                       page={totalPages}
@@ -363,13 +365,13 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({ orders, title, showOrd
             <Button
               variant="outline"
               size="sm"
-              className="h-9 w-9 p-0"
+              className="h-8 sm:h-9 w-8 sm:w-9 p-0 text-xs sm:text-sm"
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
               aria-label="Go to next page"
               type="button"
             >
-              <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" aria-hidden="true" />
               <span className="sr-only">Next page</span>
             </Button>
           </div>

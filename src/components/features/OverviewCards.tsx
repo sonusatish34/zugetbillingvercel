@@ -18,17 +18,17 @@ export const OverviewCards: React.FC<OverviewCardsProps> = ({ stats }) => {
   return (
     <Card>
       <CardContent>
-        <h3 className="text-lg font-semibold text-primary mb-4">Overview</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <h3 className="text-base sm:text-lg font-semibold text-primary mb-3 sm:mb-4">Overview</h3>
+        <div className="responsive-grid">
           {items.map((item, index) => {
             const IconComponent = item.icon;
             return (
-              <div key={index} className="text-center md:text-left">
-                <div className="flex items-center gap-2 mb-2 justify-center md:justify-start">
-                  <IconComponent className="w-5 h-5 icon-purple" />
-                  <p className="text-2xl font-bold text-primary">{item.value}</p>
+              <div key={index} className="text-center sm:text-left">
+                <div className="flex items-center gap-2 mb-2 justify-center sm:justify-start">
+                  <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 icon-purple shrink-0" />
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-primary">{item.value}</p>
                 </div>
-                <p className="text-sm text-secondary">{item.label}</p>
+                <p className="text-xs sm:text-sm text-secondary">{item.label}</p>
               </div>
             );
           })}

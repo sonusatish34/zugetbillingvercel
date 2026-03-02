@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FileUp, ChevronRight } from "lucide-react";
 
 /* ================== CONFIG ================== */
 const API_BASE = "https://dev.zuget.com";
@@ -49,18 +50,166 @@ const createEmptySizes = (): SizeRow[] =>
     quantity: "",
   }));
 
+type UploadItem = {
+  _id: number;
+  filename: string;
+  status: string;
+  xlsx_link: string;
+  created_on: string;
+};
+function formatDateTime(dateString: string) {
+  const date = new Date(dateString.replace(" ", "T"));
+
+  const day = date.getDate();
+  const year = date.getFullYear();
+  const seconds = date.getSeconds();
+
+  const month = date.toLocaleString("en-US", { month: "short" });
+
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+
+  const ampm = hours >= 12 ? "pm" : "am";
+  const formattedHours = hours % 12 || 12;
+
+  const formattedMinutes = minutes.toString().padStart(2, "0");
+
+  const getOrdinal = (n: number) => {
+    if (n > 3 && n < 21) return "th";
+    switch (n % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  };
+
+  return `${day}${getOrdinal(day)} ${month} ${year} ${formattedHours}:${formattedMinutes} ${ampm} ${seconds} seconds`;
+}
+
+// ================= Upload Card Component =================
+function UploadCard({ item }: { item: UploadItem }) {
+  return (
+    <div
+      className="bg-white rounded-xl p-4 shadow-sm 
+      flex justify-between items-center hover:shadow-md transition"
+    >
+      <div>
+        <p className="font-medium text-gray-800">
+          {item.filename}
+        </p>
+        <p className="text-sm text-gray-500">
+          {formatDateTime(item.created_on)}
+        </p>
+        <p
+          className={`text-xs mt-1 ${item.status === "processed"
+            ? "text-green-600"
+            : "text-yellow-600"
+            }`}
+        >
+          {item.status}
+        </p>
+      </div>
+
+      <a
+        href={item.xlsx_link}
+        target="_blank"
+        className="p-2 rounded-full hover:bg-gray-100"
+      >
+        <ChevronRight />
+      </a>
+    </div>
+  );
+}
+
 /* ================== COMPONENT ================== */
 export default function AddItemPage() {
   /* ---------- AUTH ---------- */
   const [authtoken, setAuthtoken] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [uploads, setUploads] = useState<UploadItem[]>([]);
 
+
+  // ✅ Fetch Uploaded Files
+
+
+
+  const fetchUploads = async () => {
+    try {
+      const res = await fetch(
+        "https://dev.zuget.com/admin/uploaded-csv",
+        {
+          headers: {
+            Authorization: authtoken,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      const data = await res.json();
+      if (data.status === "success") {
+        setUploads(data.data);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchUploads();
+  }, []);
+
+  // ✅ Upload ZIP/CSV
+  const handleUpload = async () => {
+    if (!file) return alert("Please select a file");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(
+        "https://dev.zuget.com/admin/csv-items",
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+
+            Authorization: authtoken,
+          },
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.status === "success") {
+        alert(data.message);
+        fetchUploads();
+        setFile(null);
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const latestUpload = uploads[0];
+  const previousUploads = uploads.slice(1);
   /* ---------- DROPDOWNS ---------- */
   const [patterns, setPatterns] = useState<Option[]>([]);
   const [fabrics, setFabrics] = useState<Option[]>([]);
   const [fits, setFits] = useState<Option[]>([]);
 
   /* ---------- TABS ---------- */
-  const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
+  const [activeTab, setActiveTab] = useState<"single" | "bulk">("bulk");
 
   /* ---------- SINGLE FORM ---------- */
   const [form, setForm] = useState({
@@ -114,10 +263,7 @@ export default function AddItemPage() {
     const res = await fetch(`${API_BASE}${endpoint}`, {
       headers: {
         Accept: "application/json",
-        Authorization:
-          localStorage.getItem(
-            localStorage.getItem("user_phone") + "_token"
-          ) || "",
+        Authorization: authtoken,
       },
     });
     const json = await res.json();
@@ -184,7 +330,7 @@ export default function AddItemPage() {
     try {
       const lines = bulkCsv.trim().split('\n').filter(line => line.trim());
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      
+
       const rows: BulkRow[] = [];
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
@@ -192,7 +338,7 @@ export default function AddItemPage() {
         headers.forEach((header, idx) => {
           row[header] = values[idx] || '';
         });
-        
+
         // Validate required fields
         if (!row.title || !row.item_name || !row.brand) {
           alert(`Missing required fields in row ${i + 1}`);
@@ -384,48 +530,45 @@ export default function AddItemPage() {
 
   /* ================== UI ================== */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
-      <div className="p-8 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-indigo-50">
+      <div className="p-">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Add New Item
+            <h1 className="text-4xl font-bold bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Add Item
             </h1>
             <p className="text-slate-500 mt-2">Upload single items or bulk via CSV</p>
           </div>
         </div>
 
         {/* Main Container */}
-        <div className="bg-white/70 backdrop-blur-xl shadow-2xl rounded-3xl border border-white/50 p-8">
-          
+        <div className="">
+
           {/* TABS */}
           <div className="flex border-b border-slate-200 mb-10 pb-4">
-            <button
-              onClick={() => setActiveTab("single")}
-              className={`px-8 py-3 rounded-t-xl font-semibold transition-all duration-300 flex items-center gap-2 ${
-                activeTab === "single"
-                  ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-lg shadow-indigo-500/25 -mb-px z-10"
-                  : "text-slate-600 hover:text-indigo-600 hover:bg-slate-50"
-              }`}
-            >
-              <div className={`w-3 h-3 rounded-full ${
-                activeTab === "single" ? "bg-white/30" : "bg-indigo-400/50"
-              }`}></div>
-              Single Upload
-            </button>
+
             <button
               onClick={() => setActiveTab("bulk")}
-              className={`px-8 py-3 rounded-t-xl font-semibold ml-2 transition-all duration-300 flex items-center gap-2 ${
-                activeTab === "bulk"
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 -mb-px z-10"
-                  : "text-slate-600 hover:text-emerald-600 hover:bg-slate-50"
-              }`}
+              className={`px-8 py-3 rounded-t-xl font-semibold ml-2 transition-all duration-300 flex items-center gap-2 ${activeTab === "bulk"
+                ? "bg-linear-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 -mb-px z-10"
+                : "text-slate-600 hover:text-emerald-600 hover:bg-slate-50"
+                }`}
             >
-              <div className={`w-3 h-3 rounded-full ${
-                activeTab === "bulk" ? "bg-white/30" : "bg-emerald-400/50"
-              }`}></div>
+              <div className={`w-3 h-3 rounded-full ${activeTab === "bulk" ? "bg-white/30" : "bg-emerald-400/50"
+                }`}></div>
               Bulk Upload (CSV)
+            </button>
+            <button
+              onClick={() => setActiveTab("single")}
+              className={`px-8 py-3 rounded-t-xl font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === "single"
+                ? "bg-linear-to-r from-indigo-500 to-blue-500 text-white shadow-lg shadow-indigo-500/25 -mb-px z-10"
+                : "text-slate-600 hover:text-indigo-600 hover:bg-slate-50"
+                }`}
+            >
+              <div className={`w-3 h-3 rounded-full ${activeTab === "single" ? "bg-white/30" : "bg-indigo-400/50"
+                }`}></div>
+              Single Upload
             </button>
           </div>
 
@@ -435,29 +578,29 @@ export default function AddItemPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Product Title</label>
-                  <input 
-                    className="input-field" 
-                    placeholder="Enter product title" 
+                  <input
+                    className="input-field"
+                    placeholder="Enter product title"
                     value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })} 
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Brand</label>
-                  <input 
-                    className="input-field" 
-                    placeholder="Enter brand name" 
+                  <input
+                    className="input-field"
+                    placeholder="Enter brand name"
                     value={form.brand}
-                    onChange={(e) => setForm({ ...form, brand: e.target.value })} 
+                    onChange={(e) => setForm({ ...form, brand: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Item Name</label>
-                  <input 
-                    className="input-field" 
-                    placeholder="Enter item name" 
+                  <input
+                    className="input-field"
+                    placeholder="Enter item name"
                     value={form.item_name}
-                    onChange={(e) => setForm({ ...form, item_name: e.target.value })} 
+                    onChange={(e) => setForm({ ...form, item_name: e.target.value })}
                   />
                 </div>
               </div>
@@ -466,8 +609,8 @@ export default function AddItemPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Gender</label>
-                  <select 
-                    className="input-field" 
+                  <select
+                    className="input-field"
                     value={form.gender}
                     onChange={(e) => setForm({ ...form, gender: e.target.value })}
                   >
@@ -478,8 +621,8 @@ export default function AddItemPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Pattern</label>
-                  <select 
-                    className="input-field" 
+                  <select
+                    className="input-field"
                     value={form.pattern}
                     onChange={(e) => setForm({ ...form, pattern: e.target.value })}
                   >
@@ -491,8 +634,8 @@ export default function AddItemPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Fabric</label>
-                  <select 
-                    className="input-field" 
+                  <select
+                    className="input-field"
                     value={form.fabric}
                     onChange={(e) => setForm({ ...form, fabric: e.target.value })}
                   >
@@ -504,8 +647,8 @@ export default function AddItemPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">Fit</label>
-                  <select 
-                    className="input-field" 
+                  <select
+                    className="input-field"
                     value={form.fit}
                     onChange={(e) => setForm({ ...form, fit: e.target.value })}
                   >
@@ -524,7 +667,7 @@ export default function AddItemPage() {
                   <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-indigo-400 transition-colors bg-slate-50/50">
                     <input type="file" accept="image/*" onChange={handleItemImageChange} className="hidden" id="item-image" />
                     <label htmlFor="item-image" className="cursor-pointer block">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-2xl flex items-center justify-center">
+                      <div className="w-16 h-16 mx-auto mb-4 bg-linear-to-br from-indigo-100 to-blue-100 rounded-2xl flex items-center justify-center">
                         <svg className="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
@@ -544,7 +687,7 @@ export default function AddItemPage() {
                   <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:border-purple-400 transition-colors bg-slate-50/50">
                     <input type="file" accept="image/*" onChange={handleItemVideoChange} className="hidden" id="item-video" />
                     <label htmlFor="item-video" className="cursor-pointer block">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center">
+                      <div className="w-16 h-16 mx-auto mb-4 bg-linear-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center">
                         <svg className="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -566,7 +709,7 @@ export default function AddItemPage() {
               {singleVariants.map((variant, vIndex) => (
                 <div key={vIndex} className="variant-card">
                   <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
-                    <h3 className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+                    <h3 className="text-xl font-bold bg-linear-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
                       Color Variant {vIndex + 1}
                     </h3>
                     {vIndex > 0 && (
@@ -597,7 +740,7 @@ export default function AddItemPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-r from-slate-50/50 to-indigo-50/30 rounded-2xl">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-linear-to-r from-slate-50/50 to-indigo-50/30 rounded-2xl">
                       <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700">Same Price (All Sizes)</label>
                         <input
@@ -625,19 +768,19 @@ export default function AddItemPage() {
                         <div key={s.size} className="size-card">
                           <div className="size-label">{s.size}</div>
                           <div className="space-y-2">
-                            <input 
-                              className="input-field size-input" 
-                              placeholder="Qty" 
-                              type="number" 
+                            <input
+                              className="input-field size-input"
+                              placeholder="Qty"
+                              type="number"
                               value={s.quantity}
-                              onChange={(e) => handleSizeChange(vIndex, i, "quantity", e.target.value)} 
+                              onChange={(e) => handleSizeChange(vIndex, i, "quantity", e.target.value)}
                             />
-                            <input 
-                              className="input-field size-input" 
-                              placeholder="₹ 0" 
-                              type="number" 
+                            <input
+                              className="input-field size-input"
+                              placeholder="₹ 0"
+                              type="number"
                               value={s.price}
-                              onChange={(e) => handleSizeChange(vIndex, i, "price", e.target.value)} 
+                              onChange={(e) => handleSizeChange(vIndex, i, "price", e.target.value)}
                             />
                           </div>
                         </div>
@@ -666,172 +809,100 @@ export default function AddItemPage() {
           )}
 
           {activeTab === "bulk" && (
-            <div className="space-y-8">
-              {/* BULK UPLOAD */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <label className="text-lg font-bold text-slate-800 block mb-4">Bulk Image</label>
-                  <p className="text-sm text-slate-600 mb-4">Same image used for all items</p>
-                  <div className="border-2 border-dashed border-emerald-300 rounded-2xl p-10 text-center hover:border-emerald-400 transition-colors bg-gradient-to-br from-emerald-50/50 to-teal-50/50">
-                    <input type="file" accept="image/*" onChange={handleBulkImageChange} className="hidden" id="bulk-image" />
-                    <label htmlFor="bulk-image" className="cursor-pointer block">
-                      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center shadow-lg">
-                        <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-slate-700 font-semibold text-lg">Upload Bulk Image</p>
-                      <p className="text-sm text-slate-500 mt-1">PNG, JPG up to 10MB</p>
-                    </label>
-                    {bulkImagePreview && (
-                      <div className="mt-6">
-                        <img src={bulkImagePreview} className="w-40 h-40 object-cover rounded-2xl shadow-2xl mx-auto border-4 border-emerald-200" />
-                      </div>
-                    )}
-                  </div>
+            <div className="min-h-screen bg-gray-50 px-2">
+              <div className="space-y-8">
+                {/* ================= Upload Box ================= */}
+                <div>
+                  <h2 className="font-semibold text-lg mb-3">Bulk Upload Steps </h2>
+                  <ol className="space-y-4 list-decimal list-inside text-gray-700 leading-relaxed">
+                    <li>
+                      Download the sample file from the ZIP to CSV Converter.
+                    </li>
+                    <li>
+                      Open the file in Google Sheets.
+                    </li>
+                    <li>
+                      Fill in all the empty fields with the required details.
+                    </li>
+                    <li>
+                      Enter the product name. Do not use special characters such as :
+                    </li>
+                    <li>
+                      Select the remaining details from the dropdown options. If the
+                      required option is not available, you may enter it manually.
+                    </li>
+                    <li>
+                      After completing all the details, download the file in CSV format.
+                    </li>
+                    <li>
+                      Upload the CSV file below.
+                    </li>
+                  </ol>
                 </div>
+                <div
+                  className="border-2 border-dashed border-purple-400 
+                      rounded-2xl p-12 flex flex-col items-center 
+                      justify-center bg-white cursor-pointer hover:bg-purple-50 transition"
+                >
+                  <label className="mt-4 font-semibold text-lg cursor-pointer w-full">
 
-                <div className="space-y-4">
-                  <label className="text-lg font-bold text-slate-800 block mb-4">CSV Data</label>
-                  <div className="space-y-3">
-                    <div>
-                      <input type="file" accept=".csv,text/csv" onChange={handleBulkCsvChange} className="hidden" id="bulk-csv" />
-                      <label htmlFor="bulk-csv" className="btn-secondary w-full flex items-center justify-center py-3 px-6 rounded-xl border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50 transition-all">
-                        📁 Upload CSV File
-                      </label>
-                    </div>
-                    <div className="pt-4 border-t border-slate-200">
-                      <p className="text-xs text-slate-500 mb-2 font-mono">Or paste CSV data:</p>
-                      <textarea
-                        className="csv-textarea"
-                        placeholder="title,brand,item_name,gender,pattern,fabric,fit,coNike T-Shirt,Nike,Nike Classic Tee,Male,Plain,Cotton,Regular,Blue"
-                        value={bulkCsv}
-                        onChange={(e) => setBulkCsv(e.target.value)}
-                      />
-                      <p className="text-xs text-slate-500 mt-2 font-mono">
-                        Format: title,brand,item_name,gender,pattern,fabric,fit,color
+                    <p className="flex gap-x-2 justify-center"><FileUp size={28} />Upload CSV File
                       </p>
-                    </div>
-                  </div>
-                  <button onClick={parseBulkCsv} className="btn-primary w-full">
-                    🔍 Parse & Preview CSV
+                    <input
+                      type="file"
+                      accept=".zip,.csv"
+                      className="hidden w-full"
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+
+                  {file && (
+                    <p className="mt-3 text-sm text-gray-500">
+                      Selected: {file.name}
+                    </p>
+                  )}
+
+                  <button
+                    onClick={handleUpload}
+                    disabled={loading}
+                    className="mt-6 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                  >
+                    {loading ? "Uploading..." : "Upload"}
                   </button>
                 </div>
-              </div>
 
-              {parsedCsv && bulkRows.length > 0 && (
-                <>
-                  <div className="bg-gradient-to-r from-emerald-50/70 to-teal-50/70 border border-emerald-200 rounded-3xl p-8">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
-                        <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold text-slate-800">{bulkRows.length} Items Ready</h3>
-                        <p className="text-slate-600">Click submit to upload all items</p>
-                      </div>
-                    </div>
+                {/* ================= Recent Upload ================= */}
+                {latestUpload && (
+                  <div>
+                    <h2 className="font-semibold text-lg mb-3">
+                      Recent Upload
+                    </h2>
 
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
-                      <table className="w-full">
-                        <thead className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
-                          <tr>
-                            <th className="table-header">Title</th>
-                            <th className="table-header">Item Name</th>
-                            <th className="table-header">Brand</th>
-                            <th className="table-header">Gender</th>
-                            <th className="table-header">Color</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {bulkRows.slice(0, 5).map((row, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="table-cell font-medium">{row.title}</td>
-                              <td className="table-cell">{row.item_name}</td>
-                              <td className="table-cell">{row.brand}</td>
-                              <td className="table-cell">
-                                <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
-                                  {row.gender}
-                                </span>
-                              </td>
-                              <td className="table-cell font-semibold text-indigo-600">{row.color}</td>
-                            </tr>
-                          ))}
-                          {bulkRows.length > 5 && (
-                            <tr className="bg-gradient-to-r from-slate-50 to-slate-100">
-                              <td colSpan={5} className="table-cell text-center py-8 text-slate-500 font-medium">
-                                ... and {bulkRows.length - 5} more items
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
+                    <UploadCard item={latestUpload} />
+                  </div>
+                )}
+
+                {/* ================= Previous Uploads ================= */}
+                {previousUploads.length > 0 && (
+                  <div>
+                    <h2 className="font-semibold text-lg mb-3">
+                      Previous Uploaded
+                    </h2>
+
+                    <div className="space-y-3">
+                      {previousUploads.map((item) => (
+                        <UploadCard key={item._id} item={item} />
+                      ))}
                     </div>
                   </div>
-
-                  <button onClick={handleBulkSubmit} disabled={submitting} className="btn-primary w-full text-xl py-8">
-                    {submitting ? (
-                      <span className="flex items-center gap-3 justify-center">
-                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Uploading {bulkRows.length} Items...
-                      </span>
-                    ) : (
-                      `🚀 Add ${bulkRows.length} Items Now`
-                    )}
-                  </button>
-                </>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      <style jsx>{`
-        .input-field {
-          @apply w-full px-4 py-4 border border-slate-200 rounded-2xl bg-white/80 backdrop-blur-sm text-slate-800 placeholder-slate-400 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-300 shadow-sm hover:shadow-md hover:border-slate-300 text-base font-medium;
-        }
-        .input-field:focus {
-          transform: translateY(-1px);
-        }
-        .csv-textarea {
-          @apply input-field w-full h-40 resize-vertical font-mono text-sm;
-        }
-        .variant-card {
-          @apply bg-white/70 backdrop-blur-xl border border-white/50 rounded-3xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-500;
-        }
-        .size-grid {
-          @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4;
-        }
-        .size-card {
-          @apply bg-gradient-to-br from-indigo-50/50 to-blue-50/50 border border-indigo-200/50 rounded-2xl p-4 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300;
-        }
-        .size-label {
-          @apply text-center font-bold text-slate-700 text-lg mb-3 tracking-wide uppercase;
-        }
-        .size-input {
-          @apply input-field !p-3 !text-sm;
-        }
-        .btn-primary {
-          @apply bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 hover:from-indigo-600 hover:via-purple-600 hover:to-emerald-600 text-white font-bold py-4 px-8 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transform transition-all duration-300 border-0 text-lg flex items-center justify-center min-h-[56px];
-        }
-        .btn-primary:hover {
-          box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-        }
-        .btn-primary:disabled {
-          @apply bg-slate-400 from-slate-400 via-slate-400 to-slate-400 hover:from-slate-400 hover:via-slate-400 hover:to-slate-400 shadow-none transform-none cursor-not-allowed;
-        }
-        .btn-secondary {
-          @apply bg-white/80 border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-semibold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl hover:bg-slate-50 backdrop-blur-sm hover:-translate-y-1 transform transition-all duration-300 text-lg flex items-center justify-center min-h-[56px];
-        }
-        .table-header {
-          @apply px-6 py-4 text-left text-sm font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200;
-        }
-        .table-cell {
-          @apply px-6 py-4 whitespace-nowrap text-sm text-slate-600 border-b border-slate-100;
-        }
-      `}</style>
+
     </div>
   );
 }

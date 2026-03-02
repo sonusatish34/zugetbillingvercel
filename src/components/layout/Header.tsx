@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const today = new Date();
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(today.getDate() - 29);
+    thirtyDaysAgo.setDate(today.getDate() - 7);
     return {
       startDate: thirtyDaysAgo,
       endDate: today,
@@ -121,21 +121,22 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
-      <div className="flex items-center justify-between px-4 md:px-6 py-4">
+    <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 shadow-sm">
+      {/* Main Header */}
+      <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4">
         {/* Mobile Menu Button and Breadcrumbs */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors shrink-0"
           >
             <Menu className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
-          <div className="flex flex-col">
-            <nav className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">
+          <div className="flex flex-col min-w-0 flex-1">
+            <nav className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1 overflow-hidden text-ellipsis">
               {pageInfo.breadcrumbs.map((crumb, index) => (
                 <React.Fragment key={index}>
-                  {index > 0 && <span className="mx-2">/</span>}
+                  {index > 0 && <span className="mx-1 sm:mx-2">/</span>}
                   <span
                     className={
                       index === pageInfo.breadcrumbs.length - 1
@@ -148,70 +149,71 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 </React.Fragment>
               ))}
             </nav>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">
               {pageInfo.title}
             </h1>
           </div>
         </div>
 
         {/* Right Side Actions */}
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Search */}
-          <div className="hidden md:block w-48 lg:w-64">
-            <Input
-              type="text"
-              placeholder="Search"
-              icon={<Search className="w-4 h-4" />}
-              className="w-full"
-            />
-          </div>
-
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-4 shrink-0">
+          {/* Search - Hidden on mobile */}
           {/* Date Range Picker */}
-          <div className="hidden lg:block w-56 lg:w-64">
+          <div className="hidden lg:block w-56 lg:w-72">
             <DateRangePicker
               value={dateRange}
               onChange={setDateRange}
               placeholder="Select date range"
             />
           </div>
+          <div className="hidden md:block lg:w-64">
+            <Input
+              type="text"
+              placeholder="Search"
+              icon={<Search className="w-4 h-4" />}
+              className="w-full text-sm"
+            />
+            
+          </div>
+          
 
           {/* Icons */}
-          <div className="flex items-center gap-2 md:gap-3">
-            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors relative">
-              <Bell className="w-4 h-4 md:w-5 md:h-5 text-gray-600 dark:text-gray-300" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors relative shrink-0">
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-300" />
+              <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <button
               onClick={toggleTheme}
-              className="hidden md:block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              className="hidden sm:block p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors shrink-0"
             >
               {isMounted ? (
                 theme === 'dark' ? (
-                  <Sun className="w-5 h-5 text-gray-600 dark:text-yellow-400" />
+                  <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-yellow-400" />
                 ) : (
-                  <Moon className="w-5 h-5 text-gray-600" />
+                  <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 )
               ) : (
-                <Moon className="w-5 h-5 text-gray-600" />
+                <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
               )}
             </button>
-            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
-              <div className="w-7 h-7 md:w-8 md:h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs md:text-sm font-medium">S</span>
+            <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors shrink-0">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs sm:text-sm font-medium">S</span>
               </div>
             </button>
           </div>
-
-          {/* Create New Button */}
-          {/* <Button
-            variant="primary"
-            size="sm"
-            className="hidden lg:flex items-center gap-2 text-sm md:text-base"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden xl:inline">Create New</span>
-          </Button> */}
         </div>
+      </div>
+
+      {/* Mobile Search - Visible on mobile/tablet */}
+      <div className="hidden md:hidden px-3 sm:px-4 pb-3 space-y-2">
+        <Input
+          type="text"
+          placeholder="Search"
+          icon={<Search className="w-4 h-4" />}
+          className="w-full text-sm"
+        />
       </div>
     </header>
   );

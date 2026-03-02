@@ -40,7 +40,7 @@ const EmployeeTableRow = memo<{ employee: Employee; onDelete: (id: string) => vo
         </button>
       </td>
       <td className="table-cell" role="gridcell">
-        <Link 
+        <Link
           href={`/manage/employees/${employee.id}`}
           className="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
           aria-label={`View added items for ${employee.name}`}
@@ -64,11 +64,10 @@ const PaginationButton = memo<{
     onClick={onClick}
     aria-label={`Go to page ${page}`}
     aria-current={isActive ? 'page' : undefined}
-    className={`h-9 w-9 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-      isActive
+    className={`h-9 w-9 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${isActive
         ? 'bg-purple-600 text-white'
         : 'text-secondary hover:bg-gray-100 dark:hover:bg-slate-800'
-    }`}
+      }`}
   >
     <span className="sr-only">{isActive ? 'Current page' : ''}</span>
     {page}
@@ -163,9 +162,9 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onDel
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-primary">Employees</h1>
         <div className="flex items-center gap-3" role="toolbar" aria-label="Employee actions">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="h-10 px-4"
             aria-label="Export employees"
             type="button"
@@ -173,9 +172,9 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onDel
             <Upload className="w-4 h-4 mr-2" aria-hidden="true" />
             <span>Export</span>
           </Button>
-          <Button 
-            variant="primary" 
-            size="sm" 
+          <Button
+            variant="primary"
+            size="sm"
             className="h-10 px-4"
             aria-label="Add new employee"
             type="button"
@@ -207,9 +206,9 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onDel
             Search employees by name, number, designation, or ID
           </span>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="h-10 px-4"
           aria-label="Open filter options"
           type="button"
@@ -225,7 +224,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onDel
             id="sort-select"
             value={sortBy}
             onChange={handleSortChange}
-            className="input-base h-10 px-3 text-sm min-w-[120px]"
+            className="input-base h-10 px-3 text-sm min-w-30"
             aria-label="Sort employees"
           >
             <option value="latest">Latest</option>
@@ -239,7 +238,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onDel
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table 
+            <table
               className="w-full"
               role="table"
               aria-label="Employees table"
@@ -262,8 +261,8 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onDel
               <tbody>
                 {paginatedEmployees.length > 0 ? (
                   paginatedEmployees.map((employee) => (
-                    <EmployeeTableRow 
-                      key={employee.id} 
+                    <EmployeeTableRow
+                      key={employee.id}
                       employee={employee}
                       onDelete={handleDelete}
                     />
@@ -291,7 +290,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({ employees, onDel
             <select
               id="items-per-page"
               value={itemsPerPage}
-              className="input-base h-9 px-2 text-sm min-w-[80px]"
+              className="input-base h-9 px-2 text-sm min-w-20"
               aria-label="Items per page"
               disabled
             >

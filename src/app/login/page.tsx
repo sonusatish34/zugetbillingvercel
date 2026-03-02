@@ -214,86 +214,79 @@ const Login = ({ role = "user" }) => {
       (otpInputRefs.current[0] as HTMLInputElement).focus();
     }
   }, [otpSuccess]);
+   let ref = useRef(0);
 
+  function handleClick() {
+    console.log("clcied");
+    
+    ref.current = ref.current + 1;
+  };
+
+  // useEffect(() => {
+  //   prevCount.current = count;
+  // }, [count]);
   return (
     <div
-      className="h-screen w-screen min-h-screen"
+      className="min-h-screen w-full flex justify-center items-center p-4 sm:p-0"
       style={{
         backgroundImage: "url('/loginscreen.webp')",
         backgroundSize: "cover",
         backgroundPosition: "bottom"
       }}
     >
-      <div className="flex justify-center items-center h-full w-full">
-        <div className="flex flex-col lg:flex-row justify-center items-center">
-          <div className="bg-black xl:h-[500px] xl:w-[500px] lg:h-[400px] lg:w-[400px] h-[150px] w-full lg:rounded-l-md rounded-tl-md rounded-tr-md lg:rounded-tr-none ">
-            <Image className="xl:h-[500px] xl:w-[500px] lg:h-[400px] lg:w-[400px] h-[150px] w-full" width={1000} height={1000} src={'/images/logo.png'} alt="dkmsmd" />
-          </div>
+      <div>
+       
+      </div>
+      <div className="flex flex-col md:flex-row w-full md:w-auto justify-center items-center gap-0">
+        <div className="bg-black h-32 sm:h-40 md:h-96 lg:h-96 w-full md:w-80 lg:w-96 md:rounded-l-md rounded-tl-md rounded-tr-md  md:rounded-tr-none">
+          <Image className="h-32 sm:h-40 md:h-96 lg:h-full w-full md:w-80 lg:w-96 object-cover" width={1000} height={1000} src={'/logo.webp'} alt="Logo" />
+        </div>
 
-          {!otpSuccess ? (
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col lg:gap-y-7 gap-y-4 justify-center items-left bg-white dark:bg-black dark:text-white xl:h-[500px] xl:w-[550px] h-[250px] w-full lg:h-[400px] lg:w-[500px] lg:px-14 lg:p-6 px-2 lg:rounded-r-md rounded-br-md rounded-bl-md lg:rounded-bl-none  shadow-lg"
+        {!otpSuccess ? (
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-3 sm:gap-4 md:gap-6 lg:gap-7 justify-center items-start bg-white dark:bg-black dark:text-white h-auto md:h-96 lg:h-96 w-full md:w-80 lg:w-md px-4 sm:px-6 md:px-8 lg:px-14 py-6 md:py-6 md:rounded-r-md rounded-br-md rounded-bl-md md:rounded-bl-none shadow-lg"
+          >
+            <p className="font-bold text-lg sm:text-xl md:text-2xl lg:text-3xl">
+              {role === "approval" && "Approval Team"}
+            </p>
+            <p className="font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-black dark:text-white">
+              Please Login!
+            </p>
+            <input
+              ref={mobilenofocus}
+              type="text"
+              value={phoneNumber}
+              onChange={(e) => {
+                const formattedValue = e.target.value.replace(/[^0-9]/g, "");
+                if (formattedValue.length <= 10) {
+                  setPhoneNumber(formattedValue);
+                  setError("");
+                }
+              }}
+              className="rounded-lg outline-none bg-gray-100 dark:bg-gray-700 text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 placeholder:text-sm sm:placeholder:text-base text-base sm:text-lg md:text-xl py-3 sm:py-4 px-3 sm:px-4 tracking-wider w-full"
+              placeholder="Enter your WhatsApp number"
+              maxLength={10}
+            />
+            {error && (
+              <p className="text-xs sm:text-sm md:text-base text-red-400">{error}</p>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 sm:py-3 md:py-4 rounded-md cursor-pointer transition font-medium text-sm sm:text-base"
             >
-              {/* <Link className="text-purple-600 w-fit font-semibold hover:underline" href={'/approval-login'}>
-                Approval Team Login
-              </Link> */}
-              <p className="font-bold xl:text-2xl lg:text-xl text-lg">
-                {role === "approval" && "Approval Team"}
-              </p>
-              <p className="font-bold xl:text-5xl lg:text-4xl text-xl text-black dark:text-white">
-                Please Login!
-              </p>
-              <input
-                ref={mobilenofocus}
-                type="text"
-                value={phoneNumber}
-                onChange={(e) => {
-                  const formattedValue = e.target.value.replace(/[^0-9]/g, "");
-                  if (formattedValue.length <= 10) {
-                    setPhoneNumber(formattedValue);
-                    setError("");
-                  }
-                }}
-                className="rounded-xl outline-none bg-[#F5F5F5] text-black placeholder-black placeholder:text-base lg:text-2xl text-xl py-4 pl-4 tracking-wider"
-                placeholder="Enter your WhatsApp number"
-                maxLength={10}
-              />
-              {/* Role Dropdown */}
-              {/* <div>
-                <label className="block mb-2 text-sm font-medium text-gray-700">
-                  Select Role
-                </label>
-
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full bg-gray-100 text-black p-4 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 transition"
-                >
-                  <option value="store_admin">Store Admin</option>
-                  <option value="employee">Employee</option>
-                  <option value="guest">Guest</option>
-                </select>
-              </div> */}
-              {error && (
-                <p className="text-xs lg:text-lg text-red-400">{error}</p>
-              )}
-
-              <button
-                type="submit"
-                className="w-full bg-[#793FDF] text-white py-2 rounded-md cursor-pointer hover:opacity-90 transition"
-              >
-                Send WhatsApp OTP
-              </button>
-            </form>
-          ) : (
-            <div className="flex flex-col lg:gap-y-3 gap-y-1 justify-center items-left bg-white xl:h-[500px] xl:w-[500px] h-[200px] w-[250px] lg:h-[400px] lg:w-[400px] lg:px-14 lg:p-6 px-2 rounded-r-md shadow-lg text-black">
-              <p className="font-bold xl:text-xl lg:text-lg text-sm flex gap-x-2 items-center">
-                <span>WhatsApp OTP</span>
-                <FaWhatsapp className="text-[#075E54] size-6" />
-              </p>
-              <p className="lg:text-3xl text-lg font-bold text-black">{phoneNumber}</p>
-              <div className="lg:py-4 py-2 text-black">
+              Send WhatsApp OTP
+            </button>
+          </form>
+        ) : (
+          <div className="flex flex-col gap-2 sm:gap-3 md:gap-4 justify-center items-start bg-white dark:bg-black dark:text-white h-32 sm:h-40 md:h-[500px] lg:h-96 w-full md:w-80 lg:w-96 px-4 sm:px-6 md:px-8 py-6 md:py-6 md:rounded-r-md rounded-br-md rounded-bl-md md:rounded-bl-none shadow-lg text-black">
+            <p className="font-bold text-sm sm:text-base md:text-lg flex gap-x-2 items-center">
+              <span>WhatsApp OTP</span>
+              <FaWhatsapp className="text-green-600 size-5 sm:size-6" />
+            </p>
+            <p className="text-lg sm:text-2xl md:text-3xl font-bold text-black dark:text-white">{phoneNumber}</p>
+            <div className="py-3 sm:py-4 md:py-6 text-black dark:text-white w-full">
+              <div className="flex justify-center gap-1 sm:gap-2 md:gap-3">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -306,47 +299,47 @@ const Login = ({ role = "user" }) => {
                     onChange={(e) => handleChange(e, index)}
                     onKeyDown={(e) => handleKeyDown(e, index)}
                     maxLength={1}
-                    className="xl:w-[80px] xl:h-[60px] lg:w-[60px] lg:h-[40px] h-10 w-10 text-center mx-[5px] text-[20px] border border-[#ccc] rounded-[10px] bg-[#F5F5F5]"
+                    className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 text-center text-lg sm:text-xl md:text-2xl border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
                   />
                 ))}
               </div>
-              <button
-                onClick={() => {
-                  if (otp.join("").length === 4) {
-                    validateOtp();
-                  } else {
-                    setOtpError("Please enter a valid 4-digit OTP.");
-                  }
-                }}
-                className="w-full lg:px-4 lg:py-4 py-1 bg-[#793FDF] text-white rounded-md cursor-pointer text-xl hover:opacity-90 transition"
-              >
-                Login
-              </button>
-              {otpError && (
-                <p className="text-xs text-red-500 pt-2">{otpError}</p>
-              )}
-              <div className="flex justify-between pt-3 text-xs">
-                <span
-                  onClick={() => {
-                    setOtpSuccess(false);
-                    setOtp(["", "", "", ""]);
-                  }}
-                  className="underline cursor-pointer hover:text-purple-600"
-                >
-                  Change Number
-                </span>
-                <span
-                  onClick={() => {
-                    setResendOtp(resendotp + 1);
-                  }}
-                  className="underline cursor-pointer hover:text-purple-600"
-                >
-                  Resend OTP
-                </span>
-              </div>
             </div>
-          )}
-        </div>
+            <button
+              onClick={() => {
+                if (otp.join("").length === 4) {
+                  validateOtp();
+                } else {
+                  setOtpError("Please enter a valid 4-digit OTP.");
+                }
+              }}
+              className="w-full px-4 py-2 sm:py-3 md:py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-md cursor-pointer text-base sm:text-lg md:text-xl font-medium transition"
+            >
+              Login
+            </button>
+            {otpError && (
+              <p className="text-xs sm:text-sm text-red-500 pt-2">{otpError}</p>
+            )}
+            <div className="flex justify-between pt-3 w-full text-xs sm:text-sm gap-4">
+              <span
+                onClick={() => {
+                  setOtpSuccess(false);
+                  setOtp(["", "", "", ""]);
+                }}
+                className="underline cursor-pointer hover:text-purple-600 transition"
+              >
+                Change Number
+              </span>
+              <span
+                onClick={() => {
+                  setResendOtp(resendotp + 1);
+                }}
+                className="underline cursor-pointer hover:text-purple-600 transition"
+              >
+                Resend OTP
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

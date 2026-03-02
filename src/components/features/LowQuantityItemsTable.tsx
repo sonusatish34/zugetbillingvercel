@@ -14,7 +14,7 @@ interface LowQuantityItemsTableProps {
 // Memoized table row component for performance
 const LowQuantityTableRow = memo<{ item: Item; onStockIn: (id: string) => void; onStockOut: (id: string) => void }>(({ item, onStockIn, onStockOut }) => (
   <tr className="table-row" role="row">
-    <td className="table-cell text-primary font-medium" role="gridcell">{item.id}</td>
+    <td className="table-cell f text-primary font-medium" role="gridcell">{item.id}</td>
     <td className="table-cell" role="gridcell">
       <div className="flex items-center gap-2">
         {/* {item.productIcon && (

@@ -28,36 +28,46 @@ interface MerchantHomeData {
   store_name: string;
   owner_name: string;
 }
+interface TodayOrdersData {
+  title: string;
+  _id: number;
+  quantity: number;
+  size: number;
+}
 
 
 export default function Dashboard() {
   const [welcomeData, setWelcomeData] = useState<MerchantHomeData | null>(null)
-  console.log(welcomeData, 'welcjneddata');
+  // console.log(welcomeData, 'welcjneddata');
 
-  // useEffect(() => {
-  //   async function checkAuth() {
-  //     try {
-  //       const response = await fetch(
-  //         "http://dev.zuget.com/admin/merchant-home",
-  //         {
-  //           method: "GET",
-  //           headers: {
-  //             accept: "application/json",
-  //             Authorization: localStorage.getItem(`${localStorage.getItem("user_phone")}_token`) || "",
-  //           },
-  //         }
-  //       );
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await fetch(
+          "http://dev.zuget.com/admin/merchant-home",
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: localStorage.getItem(`${localStorage.getItem("user_phone")}_token`) || "",
+            },
+          }
+        );
 
-  //       const result: MerchantHomeResponse = await response.json();
-  //       setWelcomeData(result.data);
-  //       localStorage.setItem("store_id", result.data.store_id);
-  //     } catch (error) {
-  //       console.error(error);
-  //     }
-  //   }
-
-  //   checkAuth();
-  // }, []);
+        const result: MerchantHomeResponse = await response.json();
+        setWelcomeData(result.data);
+        // console.log(result.data.store_name,'result.data.store_name');
+        localStorage.setItem("store_name", result.data.store_name);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    checkAuth();
+   
+   
+  }, []);
+  // console.log(todayOrd,'totoooooo');
+  
 
   // Mock data matching the image
   const overviewStats = {
@@ -234,45 +244,11 @@ export default function Dashboard() {
     { name: 'Nike T-shirt', value: 32, color: '#3b82f6' },
     { name: 'Apple iPhone 15', value: 30, color: '#10b981' },
   ];
-  const [totOrd,setTotOrd] = useState(0);
-
-  useEffect((): void => {
-    const totalOrders = async (): Promise<void> => {
-      try {
-        const myHeaders: Headers = new Headers();
-        myHeaders.append("accept", "application/json");
-        myHeaders.append(
-          "Authorization",
-          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3Bob25lIjoiNzk4OTAzMDc0MSJ9.ZXYVhHb5N3ZQA7Y4Ph57lwtQ2_SLOAtUuMlUCekDas4"
-        );
-
-        const requestOptions: RequestInit = {
-          method: "GET",
-          headers: myHeaders,
-          redirect: "follow",
-        };
-
-        const response: Response = await fetch(
-          "http://dev.zuget.com/admin/total-items",
-          requestOptions
-        );
-
-        const result: string = await response.json();
-        console.log(result);
-      } catch (error: unknown) {
-        console.error(error);
-      }
-    };
-
-    totalOrders();
-  }, []);
+ 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Welcome Banner */}
-      {/* storeName?: string;
-  storeId?: string;
-  ownerName?: string; */}
       <WelcomeBanner
         storeName={welcomeData?.store_name}
         storeId={welcomeData?.store_id}
@@ -280,14 +256,14 @@ export default function Dashboard() {
       />
 
       {/* Overview Cards Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="responsive-grid">
         <OverviewCards stats={overviewStats} />
         <SalesAnalyticsCard data={salesAnalytics} />
         <InvoiceStatisticsCard data={invoiceStatistics} />
       </div>
 
       {/* Charts and Orders Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
           <RevenueChart
             data={revenueData}
@@ -302,7 +278,7 @@ export default function Dashboard() {
       <InvoicesTable invoices={invoices} />
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="">
         <RecentTransactions
           todayTransactions={todayTransactions}
           yesterdayTransactions={yesterdayTransactions}
@@ -313,7 +289,7 @@ export default function Dashboard() {
           offlineSales="₹10,041"
           offlineOrders={12150}
         />
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <TotalIncomeChart
             data={incomeChartData}
             totalIncome="$98,545"
@@ -324,8 +300,8 @@ export default function Dashboard() {
       </div>
 
       {/* Footer */}
-      <footer className="flex flex-col sm:flex-row items-center justify-between py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-slate-700 mt-8 gap-2">
-        <p>© 2025 ZuGet, All Rights Reserved</p>
+      <footer className="flex flex-col sm:flex-row items-center justify-between py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-slate-700 mt-6 md:mt-8 gap-2">
+        <p>© 2026 ZuGet, All Rights Reserved</p>
         <p>Version: 1.3.8</p>
       </footer>
     </div>

@@ -18,16 +18,16 @@ export const SalesAnalyticsCard: React.FC<SalesAnalyticsCardProps> = ({ data }) 
   return (
     <Card>
       <CardContent>
-        <h3 className="text-lg font-semibold text-primary mb-4">Sales Analytics</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <h3 className="text-base sm:text-lg font-semibold text-primary mb-3 sm:mb-4">Sales Analytics</h3>
+        <div className="responsive-grid">
           {items.map((item, index) => {
             const IconComponent = item.icon;
             return (
               <div key={index} className="flex items-start gap-2">
-                <IconComponent className="w-5 h-5 icon-purple mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-xl font-bold text-primary">{item.value}</p>
-                  <p className="text-sm text-secondary mt-1">{item.label}</p>
+                <IconComponent className="w-4 h-4 sm:w-5 sm:h-5 icon-purple mt-1 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-base sm:text-lg md:text-xl font-bold text-primary truncate">{item.value}</p>
+                  <p className="text-xs sm:text-sm text-secondary mt-1 truncate">{item.label}</p>
                 </div>
               </div>
             );

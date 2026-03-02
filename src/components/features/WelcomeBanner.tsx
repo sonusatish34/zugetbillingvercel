@@ -34,8 +34,8 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
     }
 
     setCurrentTime(
-  `${formatDate(now)} ${now.toLocaleTimeString()}`
-);
+      `${formatDate(now)} ${now.toLocaleTimeString()}`
+    );
   };
 
   useEffect(() => {
@@ -45,44 +45,44 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
 
     return () => clearInterval(interval);
   }, []);
-const formatDate = (date: Date) => {
-  const day = date.getDate();
+  const formatDate = (date: Date) => {
+    const day = date.getDate();
 
-  const getOrdinal = (n: number) => {
-    if (n > 3 && n < 21) return 'th';
-    switch (n % 10) {
-      case 1: return 'st';
-      case 2: return 'nd';
-      case 3: return 'rd';
-      default: return 'th';
-    }
+    const getOrdinal = (n: number) => {
+      if (n > 3 && n < 21) return 'th';
+      switch (n % 10) {
+        case 1: return 'st';
+        case 2: return 'nd';
+        case 3: return 'rd';
+        default: return 'th';
+      }
+    };
+
+    const month = date.toLocaleString('default', { month: 'short' });
+    const year = date.getFullYear();
+
+    return `${day}${getOrdinal(day)} ${month} ${year}`;
   };
-
-  const month = date.toLocaleString('default', { month: 'short' });
-  const year = date.getFullYear();
-
-  return `${day}${getOrdinal(day)} ${month} ${year}`;
-};
   return (
-    <Card className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 md:p-8">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex-1">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">
+    <Card className="bg-linear-to-r from-purple-600 to-purple-700 text-white p-4 sm:p-6 md:p-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 truncate">
             {greeting}{ownerName ? `, ${ownerName}` : ''}
           </h2>
 
-          <p className="text-purple-100 text-sm md:text-base mb-4">
+          <p className="text-purple-100 text-xs sm:text-sm md:text-base mb-3 sm:mb-4 line-clamp-2 capitalize">
             Welcome back{storeName ? ` to ${storeName}` : ''}.
           </p>
 
-          <p className="text-purple-200 text-xs md:text-base">
+          <p className="text-purple-200 text-xs sm:text-sm md:text-base">
             {currentTime}
           </p>
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden md:block shrink-0">
           {imageSrc && (
-            <div className="w-32 h-32 relative">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 relative">
               <Image
                 src={imageSrc}
                 alt={imageAlt}

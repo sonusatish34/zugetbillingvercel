@@ -14,9 +14,9 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const paddingStyles = {
     none: '',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
+    sm: 'p-3 sm:p-4',
+    md: 'p-3 sm:p-4 md:p-6',
+    lg: 'p-4 sm:p-6 md:p-8',
   };
 
   return (
@@ -46,12 +46,12 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   className,
 }) => {
   return (
-    <div className={cn('flex items-center justify-between mb-4', className)}>
-      <div>
-        {title && <h3 className="text-lg font-semibold text-primary">{title}</h3>}
-        {subtitle && <p className="text-sm text-secondary mt-1">{subtitle}</p>}
+    <div className={cn('flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2 sm:gap-0', className)}>
+      <div className="min-w-0">
+        {title && <h3 className="text-base sm:text-lg font-semibold text-primary truncate">{title}</h3>}
+        {subtitle && <p className="text-xs sm:text-sm text-secondary mt-1 truncate">{subtitle}</p>}
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 };

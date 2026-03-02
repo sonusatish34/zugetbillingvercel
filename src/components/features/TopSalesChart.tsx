@@ -36,7 +36,7 @@ export const TopSalesChart: React.FC<TopSalesChartProps> = ({ data, centerValue 
                 y="50%"
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="text-2xl font-bold text-gray-900 dark:text-white"
+                className="text-2xl font-bold text-gray-900 dark:text-red-800"
               >
                 {centerValue}
               </text>

@@ -27,6 +27,7 @@ import { get } from 'http';
 
 /* ================= TYPES ================= */
 interface Item {
+  sno: number;
   id: string;
   product: string;
   category: string;
@@ -116,7 +117,7 @@ export default function TotalItemsPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedPrice, setSelectedPrice] = useState('');
 
-  const offset = (page - 1) * PAGE_SIZE;
+  const offset = (page - 1) * PAGE_SIZE / 10;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   /* ================= FETCH ================= */
@@ -138,9 +139,9 @@ export default function TotalItemsPage() {
       });
 
       const json = await res.json();
-      setTotalCount(json?.data?.total_items?.length);
+      setTotalCount(json?.data?.total_items_count || 0);
 
-      const mapped: Item[] = json.data.total_items.map((item: any) => {
+      const mapped: Item[] = json.data.total_items.map((item: any, idx: number) => {
         const totalQty = item.size_data.reduce(
           (sum: number, s: any) => sum + s.quantity,
           0
@@ -155,6 +156,7 @@ export default function TotalItemsPage() {
         ).join(' - ');
 
         return {
+          sno: (page - 1) * PAGE_SIZE + idx + 1,
           id: String(item._id),
           product: item.title,
           category: item.gender,
@@ -200,6 +202,7 @@ export default function TotalItemsPage() {
 
   /* ================= TABLE ================= */
   const columns = useMemo<ColumnDef<Item>[]>(() => [
+    { header: 'sno', accessorKey: 'sno' },
     { header: 'ID', accessorKey: 'id' },
     {
       header: 'Product',
@@ -274,16 +277,16 @@ export default function TotalItemsPage() {
     email: "jon@gmail,com"
   }
   interface User {
-  id: number;
-  name: string;
-  email: string;
-  isAdmin?: boolean; // optional
-}
-const user: User = {
-  id: 1,
-  name: "Satish",
-  email: "test@gmail.com"
-};
+    id: number;
+    name: string;
+    email: string;
+    isAdmin?: boolean; // optional
+  }
+  const user: User = {
+    id: 1,
+    name: "Satish",
+    email: "test@gmail.com"
+  };
 
 
   return (
@@ -465,15 +468,18 @@ const user: User = {
         {/* Pagination */}
         <div className="flex items-center justify-between p-4 text-sm">
           <span>
-            Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, totalCount)} of {totalCount}
+            Showing {offset*10 + 1}–{Math.min(offset+10 + PAGE_SIZE*10, offset*10 + items.length)} 
           </span>
 
-          <div className="flex gap-2">
+          <div className="flex items-center justify-center gap-x-4">
             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border rounded">
               Prev
             </button>
-            <span>{page}</span>
-            <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border rounded">
+            <span className='px-3 py-1 border rounded bg-blue-500 text-white font-bold'>{page}</span>
+            <button  onClick={() => setPage(1)} className="px-3 py-1 border rounded">1</button>
+            <button  onClick={() => setPage(2)} className="px-3 py-1 border rounded">2</button>
+            <button  onClick={() => setPage(3)} className="px-3 py-1 border rounded">3</button>
+            <button disabled={page === totalPages || items.length < PAGE_SIZE} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border rounded">
               Next
             </button>
           </div>

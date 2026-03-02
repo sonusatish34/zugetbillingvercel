@@ -25,7 +25,9 @@ import {
   Headphones,
   Ticket,
   User,
-  LogOut
+  LogOut,
+  Upload,
+  DatabaseZapIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SIDEBAR_MENU } from '@/lib/constants';
@@ -44,6 +46,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   '/orders/cancelled': XCircle,
   '/orders/replaced': RefreshCw,
   '/inventory/total': Package,
+  '/inventory/upload': Upload,
+  '/inventory/ziptocsv': DatabaseZapIcon,
   '/inventory/low-quantity': AlertTriangle,
   '/inventory/add': PlusCircle,
   '/inventory/restock': PackagePlus,
@@ -76,7 +80,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
 
         localStorage.clear();
         location.reload()
-        Swal.fire('Deleted!', 'Deleted successfully.', 'success');
+        Swal.fire('Logout!', 'Logged Out successfully.', 'success');
+        
+        
+
+
       } catch (error) {
         Swal.fire('ErrorSomething went wrong');
       }
@@ -97,12 +105,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
               ? 'sidebar-submenu-item-active'
               : 'sidebar-submenu-item-inactive'
           )}
+          onClick={onClose}
         >
-          <div className="flex items-center gap-2 text-sm">
-            <Icon className="w-4 h-4" />
-            <span>{item.label}</span>
+          <div className="flex items-center gap-2 text-xs md:text-sm">
+            <Icon className="w-3 h-3 md:w-4 md:h-4" />
+            <span className="truncate">{item.label}</span>
           </div>
-          <ChevronRight className="w-4 h-4 text-secondary" />
+          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-secondary shrink-0" />
         </Link>
       );
     });
@@ -119,29 +128,31 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
       )}
       <aside
         className={cn(
-          'fixed left-0 top-0 h-screen w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-50 transition-transform duration-300',
+          'fixed left-0 top-0 h-screen w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-50 transition-transform duration-300 ease-in-out',
           'lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        role="navigation"
+        aria-label="Sidebar navigation"
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200 dark:border-slate-700">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">Z</span>
+        <div className="h-14 md:h-16 flex items-center justify-between px-4 md:px-6 border-b border-gray-200 dark:border-slate-700 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 md:w-8 md:h-8 bg-purple-600 rounded-lg flex items-center justify-center shrink-0">
+              <span className="text-white font-bold text-xs md:text-sm">Z</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">ZuGet</span>
+            <span className="text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate">ZuGet</span>
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors shrink-0"
           >
             <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4">
+        <nav className="flex-1 overflow-y-auto px-3 md:px-4 py-3 md:py-4 space-y-1">
           {/* Dashboard Link */}
           <div className="section-gap">
             <Link
@@ -150,8 +161,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
                 'sidebar-item',
                 pathname === '/' ? 'sidebar-item-active' : 'sidebar-item-inactive'
               )}
+              onClick={onClose}
             >
-              <span>Dashboard</span>
+              <span className="text-sm md:text-base">Dashboard</span>
             </Link>
           </div>
 
@@ -163,18 +175,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
                 'sidebar-item',
                 pathname === '/billing' ? 'sidebar-item-active' : 'sidebar-item-inactive'
               )}
+              onClick={onClose}
             >
-              <span className="text-xs font-medium">Billing System</span>
-              <ChevronRight className="w-4 h-4 ml-auto" />
+              <span className="text-xs md:text-sm font-medium">Billing System</span>
+              <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-auto" />
             </Link>
           </div>
 
           {/* Online Orders */}
           <div className="section-gap">
             <div className="sidebar-item sidebar-item-inactive">
-              <span className="text-xs font-medium">Online Orders</span>
+              <span className="text-xs md:text-sm font-medium">Online Orders</span>
             </div>
-            <div className="ml-4 mt-1 space-y-1">
+            <div className="ml-3 md:ml-4 mt-1 space-y-1">
               {SIDEBAR_MENU.onlineOrders.children && renderSubmenuItems(SIDEBAR_MENU.onlineOrders.children)}
             </div>
           </div>
@@ -182,9 +195,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
           {/* Inventory */}
           <div className="section-gap">
             <div className="sidebar-item sidebar-item-inactive">
-              <span className="text-xs font-medium">Inventory</span>
+              <span className="text-xs md:text-sm font-medium">Inventory</span>
             </div>
-            <div className="ml-4 mt-1 space-y-1">
+            <div className="ml-3 md:ml-4 mt-1 space-y-1">
               {SIDEBAR_MENU.inventory.children && renderSubmenuItems(SIDEBAR_MENU.inventory.children)}
             </div>
           </div>
@@ -192,9 +205,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
           {/* Finance & Accounts */}
           <div className="section-gap">
             <div className="sidebar-item sidebar-item-inactive">
-              <span className="text-xs font-medium">Finance & Accounts</span>
+              <span className="text-xs md:text-sm font-medium">Finance & Accounts</span>
             </div>
-            <div className="ml-4 mt-1 space-y-1">
+            <div className="ml-3 md:ml-4 mt-1 space-y-1">
               {SIDEBAR_MENU.finance.children && renderSubmenuItems(SIDEBAR_MENU.finance.children)}
             </div>
           </div>
@@ -202,19 +215,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = true, onClose }) => {
           {/* Manage */}
           <div className="section-gap">
             <div className="sidebar-item sidebar-item-inactive">
-              <span className="text-xs font-medium">Manage</span>
+              <span className="text-xs md:text-sm font-medium">Manage</span>
             </div>
-            <div className="ml-4 mt-1 space-y-1">
+            <div className="ml-3 md:ml-4 mt-1 space-y-1">
               {SIDEBAR_MENU.manage.children && renderSubmenuItems(SIDEBAR_MENU.manage.children)}
-
             </div>
-
           </div>
-          <div
-            onClick={() => handleLogout()}
-            className='text-sm w- px-6'>
-            <p className='flex items-center gap-x-2  bg-red-200 py-2 cursor-pointer px-2 rounded-md text-red-600 font-medium'>
-              <span><LogOut className='w-4 h-4' /></span><span>Logout</span>
+
+          {/* Logout */}
+          <div onClick={() => handleLogout()} className='text-xs md:text-sm px-4 md:px-6 mt-4'>
+            <p className='flex items-center gap-x-2 bg-red-200 py-2 cursor-pointer px-2 rounded-md text-red-600 font-medium hover:bg-red-300 transition-colors'>
+              <span><LogOut className='w-3 h-3 md:w-4 md:h-4' /></span><span>Logout</span>
             </p>
           </div>
         </nav>
