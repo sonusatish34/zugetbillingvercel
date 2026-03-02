@@ -30,7 +30,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Apply theme class immediately
     const root = document.documentElement;
     if (theme === 'dark') {
-      root.classList.add('dark');
+      root.classList.add('light');
     } else {
       root.classList.remove('dark');
     }
@@ -39,13 +39,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const toggleTheme = () => {
     setTheme((prev) => {
-      const newTheme = prev === 'light' ? 'dark' : 'light';
+      const newTheme = prev === 'light' ? 'light' : 'light';
       // Apply immediately
       const root = document.documentElement;
-      if (newTheme === 'dark') {
-        root.classList.add('dark');
+      if (newTheme === 'light') {
+        root.classList.add('light');
       } else {
-        root.classList.remove('dark');
+        root.classList.remove(' ');
       }
       localStorage.setItem('theme', newTheme);
       return newTheme;

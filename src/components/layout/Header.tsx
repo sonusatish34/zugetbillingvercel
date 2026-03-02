@@ -173,9 +173,9 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
               icon={<Search className="w-4 h-4" />}
               className="w-full text-sm"
             />
-            
+
           </div>
-          
+
 
           {/* Icons */}
           <div className="flex items-center gap-1 sm:gap-2">

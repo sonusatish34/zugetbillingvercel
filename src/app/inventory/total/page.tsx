@@ -479,7 +479,7 @@ export default function TotalItemsPage() {
             {/* <button onClick={() => setPage(1)} className="px-3 py-1 border rounded">1</button>
             <button onClick={() => setPage(2)} className="px-3 py-1 border rounded">2</button>
             <button onClick={() => setPage(3)} className="px-3 py-1 border rounded">3</button> */}
-            <button disabled={page === totalPages || items.length < PAGE_SIZE} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border rounded">
+            <button disabled={page === totalPages || items.length < PAGE_SIZE} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border rounded"> 
               Next
             </button>
           </div>
