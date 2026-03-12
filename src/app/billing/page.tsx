@@ -94,11 +94,9 @@ export default function BillingSystem() {
   const [storeName, setStoreName] = useState('dsdsd');
   return (
     <div
-      className={`min-h-screen max-w-3xl p-6 transition-colors duration-300 ${theme === "dark" ? "bg-slate-950 text-gray-100" : "bg-white text-gray-900"}`}
+      className={`min-h-screen max-w-3xl p-6 transition-colors duration-300`}
     >
-      <div
-        className={`rounded-lg shadow p-6 transition-colors duration-300 ${theme === "dark" ? "bg-slate-900 text-gray-100" : "bg-white text-gray-900"}`}
-      >
+      
         {/* <div className="mb-4">
           <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300">
             Current theme: {theme}
@@ -267,7 +265,6 @@ export default function BillingSystem() {
             Save
           </button>
         </div>
-      </div>
     </div>
   );
 }

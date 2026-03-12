@@ -129,7 +129,7 @@ export default function AddItemPage() {
     const formdata = new FormData();
     formdata.append("file", file);
 
-    const res = await fetch("https://api.zuget.com/s3/image-file", {
+    const res = await fetch("https://dev.zuget.com/s3/image-file", {
       method: "POST",
       headers: {
         accept: "application/json",

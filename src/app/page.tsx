@@ -58,6 +58,7 @@ export default function Dashboard() {
         setWelcomeData(result.data);
         // console.log(result.data.store_name,'result.data.store_name');
         localStorage.setItem("store_name", result.data.store_name);
+        localStorage.setItem("store_id", result.data.store_id);
       } catch (error) {
         console.error(error);
       }
