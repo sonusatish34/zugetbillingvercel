@@ -29,7 +29,7 @@ export const SIDEBAR_MENU = {
       { label: "Upload CSV", href: "/inventory/upload" },
       { label: "Zip to CSV Converter", href: "/inventory/ziptocsv" },
       { label: "Low Quantity Item", href: "/inventory/low-quantity" },
-      { label: "Add Item", href: "/inventory/add" },
+      { label: "Add Lists", href: "/add-list" },
       { label: "Re Stock Item", href: "/inventory/restock" },
       { label: "Offline Orders", href: "/inventory/offline-orders" },
     ],

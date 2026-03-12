@@ -6,242 +6,242 @@ import { v4 as uuidv4 } from "uuid"
 const API_BASE = "https://dev.zuget.com"
 
 type SizeInfo = {
-  price: number
-  quantity: number
+    price: number
+    quantity: number
 }
 
 type Sizes = {
-  xs: SizeInfo
-  s: SizeInfo
-  m: SizeInfo
-  l: SizeInfo
-  xl: SizeInfo
-  xxl: SizeInfo
-  xxxl: SizeInfo
-  xxxxl: SizeInfo
+    xs: SizeInfo
+    s: SizeInfo
+    m: SizeInfo
+    l: SizeInfo
+    xl: SizeInfo
+    xxl: SizeInfo
+    xxxl: SizeInfo
+    xxxxl: SizeInfo
 }
 
 type ProductRow = {
-  id: string
-  item: string
-  brand: string
-  category: string
-  gender: string
-  fabric: string
-  pattern: string
-  fit: string
-  description: string
-  frontImage?: File | null
-  backImage?: File | null
-  barcode: string
-  sizes: Sizes
+    id: string
+    item: string
+    brand: string
+    category: string
+    gender: string
+    fabric: string
+    pattern: string
+    fit: string
+    description: string
+    frontImage?: File | null
+    backImage?: File | null
+    barcode: string
+    sizes: Sizes
 }
 
 export default function ProductTable() {
 
-  const authtoken =
-    localStorage.getItem(localStorage.getItem("user_phone") + "_token") || ""
+    const authtoken =
+        localStorage.getItem(localStorage.getItem("user_phone") + "_token") || ""
 
-  const [patterns, setPatterns] = useState<any[]>([])
-  const [fabrics, setFabrics] = useState<any[]>([])
-  const [fits, setFits] = useState<any[]>([])
-  const [rows, setRows] = useState<ProductRow[]>([])
+    const [patterns, setPatterns] = useState<any[]>([])
+    const [fabrics, setFabrics] = useState<any[]>([])
+    const [fits, setFits] = useState<any[]>([])
+    const [rows, setRows] = useState<ProductRow[]>([])
 
-  const items = ["T Shirt", "Jeans", "Pant", "Shirt"]
-  const genders = ["Mens", "Womens", "Kids"]
+    const items = ["T Shirt", "Jeans", "Pant", "Shirt"]
+    const genders = ["Mens", "Womens", "Kids"]
 
-  const brands = ["Nike", "Puma", "Zara"]
-  const categories = ["Casual", "Sports", "Formal"]
+    const brands = ["Nike", "Puma", "Zara"]
+    const categories = ["Casual", "Sports", "Formal"]
 
-  useEffect(() => {
-    fetchData("/util/patterns", setPatterns)
-    fetchData("/util/fabrics", setFabrics)
-    fetchData("/util/fit-categories", setFits)
-  }, [])
+    useEffect(() => {
+        fetchData("/util/patterns", setPatterns)
+        fetchData("/util/fabrics", setFabrics)
+        fetchData("/util/fit-categories", setFits)
+    }, [])
 
-  const fetchData = async (endpoint: string, setter: Function) => {
+    const fetchData = async (endpoint: string, setter: Function) => {
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: authtoken,
-      },
-    })
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+            headers: {
+                Accept: "application/json",
+                Authorization: authtoken,
+            },
+        })
 
-    const json = await res.json()
-    setter(json?.data?.results || [])
-  }
-
-  // ADD ROW
-
-  const addRow = () => {
-
-    const defaultSize = { price: 0, quantity: 0 }
-
-    setRows([
-      ...rows,
-      {
-        id: uuidv4(),
-        item: "",
-        brand: "",
-        category: "",
-        gender: "",
-        fabric: "",
-        pattern: "",
-        fit: "",
-        description: "",
-        frontImage: null,
-        backImage: null,
-        barcode: "",
-        sizes: {
-          xs: { ...defaultSize },
-          s: { ...defaultSize },
-          m: { ...defaultSize },
-          l: { ...defaultSize },
-          xl: { ...defaultSize },
-          xxl: { ...defaultSize },
-          xxxl: { ...defaultSize },
-          xxxxl: { ...defaultSize },
-        },
-      },
-    ])
-  }
-
-  // UPDATE FIELD
-
-  const updateField = (index: number, field: string, value: any) => {
-
-    const updated = [...rows]
-    ; (updated[index] as any)[field] = value
-    setRows(updated)
-  }
-
-  // UPDATE SIZE PRICE
-
-  const updatePrice = (index: number, size: keyof Sizes, value: number) => {
-
-    const updated = [...rows]
-
-    updated[index].sizes[size].price = value
-
-    setRows(updated)
-  }
-
-  // UPDATE SIZE QUANTITY
-
-  const updateQty = (index: number, size: keyof Sizes, value: number) => {
-
-    const updated = [...rows]
-
-    updated[index].sizes[size].quantity = value
-
-    setRows(updated)
-  }
-
-  // IMAGE UPLOAD
-
-  const uploadToS3 = async (file: File): Promise<string> => {
-
-    const formdata = new FormData()
-
-    formdata.append("file", file)
-
-    const res = await fetch(`${API_BASE}/s3/image-file`, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        Authorization: authtoken,
-      },
-      body: formdata,
-    })
-
-    const result = await res.json()
-
-    return result?.data?.image_link
-  }
-
-  // SAVE PRODUCT
-
-  const saveRow = async (index: number) => {
-
-    const row = rows[index]
-
-    let imageUrl = ""
-    let videoUrl = ""
-
-    if (row.frontImage) imageUrl = await uploadToS3(row.frontImage)
-    if (row.backImage) videoUrl = await uploadToS3(row.backImage)
-
-    // convert sizes to API format
-
-    const size_data = Object.entries(row.sizes)
-      .filter(([_, v]) => v.quantity > 0)
-      .map(([size, v]) => ({
-        size: size.toUpperCase(),
-        price: v.price,
-        quantity: v.quantity
-      }))
-
-    const body = {
-
-      app_user_id: Number(localStorage.getItem("app_user_id")),
-      store_id: Number(localStorage.getItem("store_id")),
-
-      brand: row.brand,
-      item_name: row.item,
-      category: row.category,
-      gender: row.gender,
-
-      item_image: imageUrl,
-      item_video: videoUrl,
-
-      fabric: row.fabric,
-      fit: row.fit,
-
-      size_data,
-
-      product_description: row.description
+        const json = await res.json()
+        setter(json?.data?.results || [])
     }
 
-    const res = await fetch(`${API_BASE}/admin/add-product`, {
+    // ADD ROW
 
-      method: "POST",
+    const addRow = () => {
 
-      headers: {
-        accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: authtoken
-      },
+        const defaultSize = { price: 0, quantity: 0 }
 
-      body: JSON.stringify(body)
-
-    })
-
-    const result = await res.json()
-
-    if (result.status === "success") {
-
-      const updated = [...rows]
-
-      updated[index].barcode = result.data
-
-      setRows(updated)
-
-      alert("Saved Successfully")
+        setRows([
+            ...rows,
+            {
+                id: uuidv4(),
+                item: "",
+                brand: "",
+                category: "",
+                gender: "",
+                fabric: "",
+                pattern: "",
+                fit: "",
+                description: "",
+                frontImage: null,
+                backImage: null,
+                barcode: "",
+                sizes: {
+                    xs: { ...defaultSize },
+                    s: { ...defaultSize },
+                    m: { ...defaultSize },
+                    l: { ...defaultSize },
+                    xl: { ...defaultSize },
+                    xxl: { ...defaultSize },
+                    xxxl: { ...defaultSize },
+                    xxxxl: { ...defaultSize },
+                },
+            },
+        ])
     }
-  }
 
-  // PRINT BARCODE LABELS
-const printLabels = (row: ProductRow) => {
+    // UPDATE FIELD
 
-  if (!row.barcode) {
-    alert("Please save product first to generate barcode")
-    return
-  }
+    const updateField = (index: number, field: string, value: any) => {
 
-  const win = window.open("", "_blank")
+        const updated = [...rows]
+            ; (updated[index] as any)[field] = value
+        setRows(updated)
+    }
 
-  let html = `
+    // UPDATE SIZE PRICE
+
+    const updatePrice = (index: number, size: keyof Sizes, value: number) => {
+
+        const updated = [...rows]
+
+        updated[index].sizes[size].price = value
+
+        setRows(updated)
+    }
+
+    // UPDATE SIZE QUANTITY
+
+    const updateQty = (index: number, size: keyof Sizes, value: number) => {
+
+        const updated = [...rows]
+
+        updated[index].sizes[size].quantity = value
+
+        setRows(updated)
+    }
+
+    // IMAGE UPLOAD
+
+    const uploadToS3 = async (file: File): Promise<string> => {
+
+        const formdata = new FormData()
+
+        formdata.append("file", file)
+
+        const res = await fetch(`${API_BASE}/s3/image-file`, {
+            method: "POST",
+            headers: {
+                accept: "application/json",
+                Authorization: authtoken,
+            },
+            body: formdata,
+        })
+
+        const result = await res.json()
+
+        return result?.data?.image_link
+    }
+
+    // SAVE PRODUCT
+
+    const saveRow = async (index: number) => {
+
+        const row = rows[index]
+
+        let imageUrl = ""
+        let videoUrl = ""
+
+        if (row.frontImage) imageUrl = await uploadToS3(row.frontImage)
+        if (row.backImage) videoUrl = await uploadToS3(row.backImage)
+
+        // convert sizes to API format
+
+        const size_data = Object.entries(row.sizes)
+            .filter(([_, v]) => v.quantity > 0)
+            .map(([size, v]) => ({
+                size: size.toUpperCase(),
+                price: v.price,
+                quantity: v.quantity
+            }))
+
+        const body = {
+
+            app_user_id: Number(localStorage.getItem("app_user_id")),
+            store_id: Number(localStorage.getItem("store_id")),
+
+            brand: row.brand,
+            item_name: row.item,
+            category: row.category,
+            gender: row.gender,
+
+            item_image: imageUrl,
+            item_video: videoUrl,
+
+            fabric: row.fabric,
+            fit: row.fit,
+
+            size_data,
+
+            product_description: row.description
+        }
+
+        const res = await fetch(`${API_BASE}/admin/add-product`, {
+
+            method: "POST",
+
+            headers: {
+                accept: "application/json",
+                "Content-Type": "application/json",
+                Authorization: authtoken
+            },
+
+            body: JSON.stringify(body)
+
+        })
+
+        const result = await res.json()
+
+        if (result.status === "success") {
+
+            const updated = [...rows]
+
+            updated[index].barcode = result.data
+
+            setRows(updated)
+
+            alert("Saved Successfully")
+        }
+    }
+
+    // PRINT BARCODE LABELS
+    const printLabels = (row: ProductRow) => {
+
+        if (!row.barcode) {
+            alert("Please save product first to generate barcode")
+            return
+        }
+
+        const win = window.open("", "_blank")
+
+        let html = `
   <html>
   <head>
 
@@ -297,15 +297,15 @@ const printLabels = (row: ProductRow) => {
   <body>
   `
 
-  Object.entries(row.sizes).forEach(([size, data]: any) => {
+        Object.entries(row.sizes).forEach(([size, data]: any) => {
 
-    if (data.quantity > 0) {
+            if (data.quantity > 0) {
 
-      for (let i = 0; i < data.quantity; i++) {
+                for (let i = 0; i < data.quantity; i++) {
 
-        const id = `barcode_${Date.now()}_${i}`
+                    const id = `barcode_${Date.now()}_${i}`
 
-        html += `
+                    html += `
 
         <div class="label">
 
@@ -336,13 +336,13 @@ const printLabels = (row: ProductRow) => {
         </script>
 
         `
-      }
+                }
 
-    }
+            }
 
-  })
+        })
 
-  html += `
+        html += `
 
   <script>
   setTimeout(()=>{
@@ -355,268 +355,264 @@ const printLabels = (row: ProductRow) => {
 
   `
 
-  win!.document.write(html)
-  win!.document.close()
-}
-
-  // DUPLICATE ROW
-
-  const duplicateRow = (row: ProductRow) => {
-
-    const newRow = {
-      ...row,
-      id: uuidv4(),
-      barcode: "",
-      frontImage: null,
-      backImage: null
+        win!.document.write(html)
+        win!.document.close()
     }
 
-    setRows([...rows, newRow])
-  }
+    // DUPLICATE ROW
 
-  return (
+    const duplicateRow = (row: ProductRow) => {
 
-    <div className="p-6">
+        const newRow = {
+            ...row,
+            id: uuidv4(),
+            barcode: "",
+            frontImage: null,
+            backImage: null
+        }
 
-      <div className="overflow-auto border rounded-xl">
+        setRows([...rows, newRow])
+    }
 
-        <table className="min-w-full text-center border text-sm">
+    return (
 
-          <thead className="bg-gray-100">
+        <div className="p-6">
 
-            <tr>
+            <div className="overflow-auto border rounded-xl">
 
-              <th>Item</th>
-              <th>Brand</th>
-              <th>Category</th>
-              <th>Gender</th>
-              <th>Fabric</th>
-              <th>Pattern</th>
-              <th>Fit</th>
+                <table className="min-w-full text-center border text-sm">
 
-              <th>Front</th>
-              <th>Back</th>
+                    <thead className="bg-gray-100">
 
-              {["XS","S","M","L","XL","XXL","3XL","4XL"].map(size=>(
-                <th key={size}>{size}<br/>Price / Qty</th>
-              ))}
+                        <tr>
 
-              <th>Description</th>
-              <th>Barcode</th>
-              <th>Save</th>
-              <th>Clone</th>
-              <th>Print</th>
+                            <th>Item</th>
+                            <th>Brand</th>
+                            <th>Category</th>
+                            <th>Gender</th>
+                            <th>Fabric</th>
+                            <th>Pattern</th>
+                            <th>Fit</th>
 
-            </tr>
+                            <th>Front</th>
+                            <th>Back</th>
 
-          </thead>
+                            {["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL"].map(size => (
+                                <th key={size}>{size}<br />Price / Qty</th>
+                            ))}
 
-          <tbody>
+                            <th>Description</th>
+                            <th>Barcode</th>
+                            <th>Save</th>
+                            <th>Clone</th>
+                            <th>Print</th>
 
-            {rows.map((row,i)=>(
+                        </tr>
 
-              <tr key={row.id} className="border-t text-center">
+                    </thead>
 
-                <td>
+                    <tbody>
 
-                  <select onChange={(e)=>updateField(i,"item",e.target.value)}>
+                        {rows.map((row, i) => (
 
-                    <option>Select</option>
+                            <tr key={row.id} className="border-t text-center">
 
-                    {items.map(v=><option key={v}>{v}</option>)}
+                                <td>
 
-                  </select>
+                                    <select onChange={(e) => updateField(i, "item", e.target.value)}>
 
-                </td>
+                                        <option>Select</option>
 
-                <td>
+                                        {items.map(v => <option key={v}>{v}</option>)}
 
-                  <select onChange={(e)=>updateField(i,"brand",e.target.value)}>
+                                    </select>
 
-                    <option>Select</option>
+                                </td>
 
-                    {brands.map(v=><option key={v}>{v}</option>)}
+                                <td>
 
-                  </select>
+                                    <select onChange={(e) => updateField(i, "brand", e.target.value)}>
 
-                </td>
+                                        <option>Select</option>
 
-                <td>
+                                        {brands.map(v => <option key={v}>{v}</option>)}
 
-                  <select onChange={(e)=>updateField(i,"category",e.target.value)}>
+                                    </select>
 
-                    <option>Select</option>
+                                </td>
 
-                    {categories.map(v=><option key={v}>{v}</option>)}
+                                <td>
 
-                  </select>
+                                    <select onChange={(e) => updateField(i, "category", e.target.value)}>
 
-                </td>
+                                        <option>Select</option>
 
-                <td>
+                                        {categories.map(v => <option key={v}>{v}</option>)}
 
-                  <select onChange={(e)=>updateField(i,"gender",e.target.value)}>
+                                    </select>
 
-                    <option>Select</option>
+                                </td>
 
-                    {genders.map(v=><option key={v}>{v}</option>)}
+                                <td>
 
-                  </select>
+                                    <select onChange={(e) => updateField(i, "gender", e.target.value)}>
 
-                </td>
+                                        <option>Select</option>
 
-                <td>
+                                        {genders.map(v => <option key={v}>{v}</option>)}
 
-                  <select onChange={(e)=>updateField(i,"fabric",e.target.value)}>
+                                    </select>
 
-                    <option>Select</option>
+                                </td>
 
-                    {fabrics.map((f:any)=>(
+                                <td>
 
-                      <option key={f.id}>{f.name}</option>
+                                    <select onChange={(e) => updateField(i, "fabric", e.target.value)}>
 
-                    ))}
+                                        <option>Select</option>
 
-                  </select>
+                                        {fabrics.map((f: any) => (
+                                            <option key={f.id}>{f.name}</option>
+                                        ))}
 
-                </td>
+                                    </select>
+                                </td>
+                                <td>
 
-                <td>
+                                    <select onChange={(e) => updateField(i, "pattern", e.target.value)}>
 
-                  <select onChange={(e)=>updateField(i,"pattern",e.target.value)}>
+                                        <option>Select</option>
 
-                    <option>Select</option>
+                                        {patterns.map((p: any) => (
 
-                    {patterns.map((p:any)=>(
+                                            <option key={p.id}>{p.name}</option>
 
-                      <option key={p.id}>{p.name}</option>
+                                        ))}
 
-                    ))}
+                                    </select>
 
-                  </select>
+                                </td>
 
-                </td>
+                                <td>
 
-                <td>
+                                    <select onChange={(e) => updateField(i, "fit", e.target.value)}>
 
-                  <select onChange={(e)=>updateField(i,"fit",e.target.value)}>
+                                        <option>Select</option>
 
-                    <option>Select</option>
+                                        {fits.map((f: any) => (
 
-                    {fits.map((f:any)=>(
+                                            <option key={f.id}>{f.name}</option>
 
-                      <option key={f.id}>{f.name}</option>
+                                        ))}
 
-                    ))}
+                                    </select>
 
-                  </select>
+                                </td>
 
-                </td>
+                                <td>
 
-                <td>
+                                    <input type="file"
+                                        onChange={(e) => updateField(i, "frontImage", e.target.files?.[0])} />
 
-                  <input type="file"
-                  onChange={(e)=>updateField(i,"frontImage",e.target.files?.[0])}/>
+                                </td>
 
-                </td>
+                                <td>
 
-                <td>
+                                    <input type="file"
+                                        onChange={(e) => updateField(i, "backImage", e.target.files?.[0])} />
 
-                  <input type="file"
-                  onChange={(e)=>updateField(i,"backImage",e.target.files?.[0])}/>
+                                </td>
 
-                </td>
+                                {Object.keys(row.sizes).map((size) => (
 
-                {Object.keys(row.sizes).map((size)=>(
+                                    <td key={size} className="p-1">
 
-                  <td key={size} className="p-1">
+                                        <input
+                                            type="number"
+                                            placeholder="Price"
+                                            className="w-16 border text-center mb-1"
+                                            value={row.sizes[size as keyof Sizes].price}
+                                            onChange={(e) => updatePrice(i, size as keyof Sizes, Number(e.target.value))}
+                                        />
 
-                    <input
-                      type="number"
-                      placeholder="Price"
-                      className="w-16 border text-center mb-1"
-                      value={row.sizes[size as keyof Sizes].price}
-                      onChange={(e)=>updatePrice(i,size as keyof Sizes,Number(e.target.value))}
-                    />
+                                        <input
+                                            type="number"
+                                            placeholder="Qty"
+                                            className="w-16 border text-center"
+                                            value={row.sizes[size as keyof Sizes].quantity}
+                                            onChange={(e) => updateQty(i, size as keyof Sizes, Number(e.target.value))}
+                                        />
 
-                    <input
-                      type="number"
-                      placeholder="Qty"
-                      className="w-16 border text-center"
-                      value={row.sizes[size as keyof Sizes].quantity}
-                      onChange={(e)=>updateQty(i,size as keyof Sizes,Number(e.target.value))}
-                    />
+                                    </td>
 
-                  </td>
+                                ))}
 
-                ))}
+                                <td>
 
-                <td>
+                                    <textarea
+                                        className="border w-28"
+                                        onChange={(e) => updateField(i, "description", e.target.value)}
+                                    />
 
-                  <textarea
-                  className="border w-28"
-                  onChange={(e)=>updateField(i,"description",e.target.value)}
-                  />
+                                </td>
 
-                </td>
+                                <td className="text-xs">{row.barcode}</td>
 
-                <td className="text-xs">{row.barcode}</td>
+                                <td>
 
-                <td>
+                                    <button
+                                        onClick={() => saveRow(i)}
+                                        className="text-green-600">
 
-                  <button
-                  onClick={()=>saveRow(i)}
-                  className="text-green-600">
+                                        Save
 
-                  Save
+                                    </button>
 
-                  </button>
+                                </td>
 
-                </td>
+                                <td>
 
-                <td>
+                                    <button
+                                        onClick={() => duplicateRow(row)}
+                                        className="text-blue-600">
 
-                  <button
-                  onClick={()=>duplicateRow(row)}
-                  className="text-blue-600">
+                                        Clone
 
-                  Clone
+                                    </button>
 
-                  </button>
+                                </td>
 
-                </td>
+                                <td>
 
-                <td>
+                                    <button
+                                        onClick={() => printLabels(row)}
+                                        className="text-purple-600">
 
-                  <button
-                  onClick={()=>printLabels(row)}
-                  className="text-purple-600">
+                                        Print
 
-                  Print
+                                    </button>
 
-                  </button>
+                                </td>
 
-                </td>
+                            </tr>
 
-              </tr>
+                        ))}
 
-            ))}
+                    </tbody>
 
-          </tbody>
+                </table>
 
-        </table>
+            </div>
 
-      </div>
+            <button
+                onClick={addRow}
+                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded">
 
-      <button
-        onClick={addRow}
-        className="mt-4 bg-blue-600 text-white px-6 py-2 rounded">
+                Add Row
 
-        Add Row
+            </button>
 
-      </button>
+        </div>
 
-    </div>
-
-  )
+    )
 }
