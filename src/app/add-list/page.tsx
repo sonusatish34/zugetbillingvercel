@@ -63,26 +63,50 @@ export default function ProductTable() {
     };
 
     const duplicateRow = useCallback((row: ProductRow, index: number) => {
+
+        // Extract value before hyphen
+        const parentBarcode = row.barcode ? row.barcode.split("-")[0] : "";
+
         const newRow: ProductRow = {
-            ...row,  // Copy EVERYTHING (color, sizes, prices, ALL fields)
             id: uuidv4(),
-            frontImage: null,  // Clear only images
-            backImage: null
-        }
+
+            item: row.item,
+            brand: row.brand,
+            category: row.category,
+            gender: row.gender,
+            color: "",
+
+            fit: row.fit,
+            description: row.description,
+
+            pattern: row.pattern,
+            neck_type: row.neck_type,
+            sleeve_type: row.sleeve_type,
+
+            barcode: parentBarcode, // 👈 ONLY parent barcode
+
+            frontImage: null,
+            backImage: null,
+
+            sizes: {
+                xs: { ...row.sizes.xs },
+                s: { ...row.sizes.s },
+                m: { ...row.sizes.m },
+                l: { ...row.sizes.l },
+                xl: { ...row.sizes.xl },
+                xxl: { ...row.sizes.xxl },
+                xxxl: { ...row.sizes.xxxl },
+                xxxxl: { ...row.sizes.xxxxl },
+            }
+        };
 
         setRows(prev => {
-            const newRows = [...prev]
-            newRows.splice(index + 1, 0, newRow)  // Insert IMMEDIATELY BELOW current row
-            return newRows
-        })
+            const newRows = [...prev];
+            newRows.splice(index + 1, 0, newRow);
+            return newRows;
+        });
 
-        // Clear preview for new row
-        setPreviews(prev => {
-            const newPreviews = { ...prev }
-            delete newPreviews[newRow.id]
-            return newPreviews
-        })
-    }, [])
+    }, []);
 
 
     const authtoken =
@@ -579,27 +603,51 @@ JsBarcode("#${id}", "${row.barcode}", {
     }
 
     const saveRow = async (index: number) => {
+        const row = rows[index];
 
-        const row = rows[index]
+        let imageUrl = "";
+        let videoUrl = "";
 
-        let imageUrl = ""
-        let videoUrl = ""
+        if (row.frontImage) imageUrl = await uploadToS3(row.frontImage);
+        if (row.backImage) videoUrl = await uploadToS3(row.backImage);
 
-        if (row.frontImage) imageUrl = await uploadToS3(row.frontImage)
-        if (row.backImage) videoUrl = await uploadToS3(row.backImage)
-
+        // --- New Dynamic Size Mapping Logic ---
         const size_data = Object.entries(row.sizes)
             .filter(([_, v]) => v.quantity > 0)
-            .map(([size, v]) => ({
-                size: size.toUpperCase(),
-                price: v.price,
-                quantity: v.quantity
-            }))
+            .map(([key, v]) => {
+                // Get the correct label based on your specific conditions
+                const finalSizeLabel = getDisplaySize(row, key);
 
+                return {
+                    size: finalSizeLabel, // Sends "28", "1-2 Year", or "L" instead of "l"
+                    price: v.price,
+                    quantity: v.quantity
+                };
+            });
+        // --------------------------------------
+
+        // const body = {
+        //     app_user_id: Number(localStorage.getItem("app_user_id")),
+        //     store_id: Number(localStorage.getItem("store_id")),
+        //     brand: row.brand,
+        //     item_name: row.item,
+        //     category: row.category,
+        //     gender: row.gender,
+        //     item_image: imageUrl,
+        //     item_video: videoUrl,
+        //     fit: row.fit,
+        //     color: row.color,
+        //     pattern: row.pattern,
+        //     neck_type: row.neck_type,
+        //     sleeve_type: row.sleeve_type,
+        //     size_data,
+        //     product_description: row.description
+        // };
         const body = {
-
             app_user_id: Number(localStorage.getItem("app_user_id")),
             store_id: Number(localStorage.getItem("store_id")),
+
+            barcode: row.barcode, // 👈 ADD THIS
 
             brand: row.brand,
             item_name: row.item,
@@ -614,37 +662,28 @@ JsBarcode("#${id}", "${row.barcode}", {
             sleeve_type: row.sleeve_type,
             size_data,
             product_description: row.description
-        }
+        };
 
         const res = await fetch(`${API_BASE}/admin/add-product`, {
-
             method: "POST",
-
             headers: {
                 accept: "application/json",
                 "Content-Type": "application/json",
                 Authorization: authtoken
             },
-
             body: JSON.stringify(body)
-        })
+        });
 
-        const result = await res.json()
+        const result = await res.json();
 
         if (result.status === "success") {
-
-            const updated = [...rows]
-
-            updated[index].barcode = result.data
-
-            setRows(updated)
-
-            alert("Saved Successfully")
-
-            // ✅ Add new empty row automatically
-            addRow()
+            const updated = [...rows];
+            updated[index].barcode = result.data;
+            setRows(updated);
+            alert("Saved Successfully");
+            addRow();
         }
-    }
+    };
 
     const sizes = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl"]
 
@@ -657,13 +696,21 @@ JsBarcode("#${id}", "${row.barcode}", {
     const getDisplaySize = (row: ProductRow, sizeKey: string) => {
         const index = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl"].indexOf(sizeKey);
         const gender = row.gender?.toLowerCase();
-        const item = row.item?.toLowerCase();
+        const item = row.item?.toLowerCase() || "";
 
-        let labels = SIZE_CONFIG.SHIRTS; // Default
+        // List of items that should use numeric sizes (28, 30, etc.)
+        const numericSizeItems = [
+            "jeans", "shorts", "trousers", "cargo pants",
+            "joggers", "chinos", "tracksuit", "pyjamas",
+            "sportswear", "swimwear", "pant"
+        ];
+
+        let labels = SIZE_CONFIG.SHIRTS; // Default (XS, S, M...)
+
         if (gender === "kids") {
-            labels = SIZE_CONFIG.KIDS;
-        } else if (item.includes("jeans") || item.includes("pant") || item.includes("trousers")) {
-            labels = SIZE_CONFIG.JEANS;
+            labels = SIZE_CONFIG.KIDS; // (0-3 Months, 1-2 Year...)
+        } else if (numericSizeItems.some(keyword => item.includes(keyword))) {
+            labels = SIZE_CONFIG.JEANS; // (28, 30, 32...)
         }
 
         return labels[index] || sizeKey.toUpperCase();
@@ -720,13 +767,11 @@ JsBarcode("#${id}", "${row.barcode}", {
                                         <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
                                             {/* Search & Add Input */}
                                             <input
-                                                list={`items-list-${i}`} // Links to the datalist below
                                                 placeholder="Search or add..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
-                                                onChange={(e) => {
-                                                    const val = e.target.value;
-                                                    updateField(i, "item", val);
-                                                }}
+                                                list={`items-list-${i}`}
+                                                value={row.item}
+                                                onChange={(e) => updateField(i, "item", e.target.value)}
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter") {
                                                         addItem(e.currentTarget.value);
@@ -759,8 +804,7 @@ JsBarcode("#${id}", "${row.barcode}", {
                                                 }}
                                                 title="Add new item"
                                                 className="rounded-md"
-                                            >
-                                                +                                            </button>
+                                            >+</button>
                                         </div>
 
                                         <datalist id={`items-list-${i}`}>
@@ -778,9 +822,11 @@ JsBarcode("#${id}", "${row.barcode}", {
                                             {/* Brand Search/Add Input */}
                                             <input
                                                 list={`brands-list-${i}`}
+                                                onChange={(e) => updateField(i, "brand", e.target.value)}
+                                                value={row.brand}
+
                                                 placeholder="Brand..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
-                                                onChange={(e) => updateField(i, "brand", e.target.value)}
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter") {
                                                         addBrand(e.currentTarget.value);
@@ -826,6 +872,7 @@ JsBarcode("#${id}", "${row.barcode}", {
                                                 placeholder="Category..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
                                                 onChange={(e) => updateField(i, "category", e.target.value)}
+                                                value={row.category}
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter") {
                                                         addCategory(e.currentTarget.value);
@@ -862,9 +909,12 @@ JsBarcode("#${id}", "${row.barcode}", {
                                 </td>
 
                                 <td className="px-2">
-                                    <select onChange={(e) => updateField(i, "gender", e.target.value)}>
-                                        <option>Select</option>
-                                        {genders.map(v => <option key={v}>{v}</option>)}
+                                    <select
+                                        value={row.gender || "Select"}
+                                        onChange={(e) => updateField(i, "gender", e.target.value)}
+                                    >
+                                        <option value="Select">Select</option>
+                                        {genders.map(v => <option key={v} value={v}>{v}</option>)}
                                     </select>
                                 </td>
 
@@ -877,6 +927,7 @@ JsBarcode("#${id}", "${row.barcode}", {
                                                 placeholder="Color..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
                                                 onChange={(e) => updateField(i, "color", e.target.value)}
+                                                value={row.color}
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter") {
                                                         addColor(e.currentTarget.value);
@@ -912,6 +963,7 @@ JsBarcode("#${id}", "${row.barcode}", {
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
                                                 // Value is stored in state via updateField
                                                 onChange={(e) => updateField(i, "fit", e.target.value)}
+                                                value={row.fit}
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter") {
                                                         addFit(e.currentTarget.value);
@@ -956,6 +1008,7 @@ JsBarcode("#${id}", "${row.barcode}", {
                                                 placeholder="Sleeve Type..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
                                                 onChange={(e) => updateField(i, "sleeve_type", e.target.value)}
+                                                value={row.sleeve_type}
                                                 onKeyDown={(e) => e.key === "Enter" && addSleeve(e.currentTarget.value)}
                                             />
                                             <button
@@ -976,7 +1029,9 @@ JsBarcode("#${id}", "${row.barcode}", {
                                                 list={`necks-list-${i}`}
                                                 placeholder="Neck Type..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
+                                                // onChange={(e) => updateField(i, "neck_type", e.target.value)}
                                                 onChange={(e) => updateField(i, "neck_type", e.target.value)}
+                                                value={row.neck_type}
                                                 onKeyDown={(e) => e.key === "Enter" && addNeck(e.currentTarget.value)}
                                             />
                                             <button
@@ -999,7 +1054,10 @@ JsBarcode("#${id}", "${row.barcode}", {
                                                 list={`patterns-list-${i}`}
                                                 placeholder="Pattern..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
+                                                // onChange={(e) => updateField(i, "pattern", e.target.value)}
                                                 onChange={(e) => updateField(i, "pattern", e.target.value)}
+                                                value={row.pattern}
+
                                                 onKeyDown={(e) => {
                                                     if (e.key === "Enter") {
                                                         addPattern(e.currentTarget.value);
@@ -1143,7 +1201,6 @@ JsBarcode("#${id}", "${row.barcode}", {
                         ))}
 
                     </tbody>
-
                 </table>
 
             </div>
