@@ -34,15 +34,21 @@ type ProductRow = {
     backImage?: File | null
     barcode: string
     sizes: Sizes
-    pattern: string,
-    neck_type: string,
-    sleeve_type: string,
+    pattern: string
+    neck_type: string
+    sleeve_type: string
+
+    isSaved?: boolean   // ✅ ADD THIS
 }
 
 export default function ProductTable() {
     const [previews, setPreviews] = useState<{ [key: string]: { front?: string; back?: string } }>({});
-
+    const [barcodes, setBarcodes] = useState<string[]>([])
     // 2. Add function to handle file selection and preview generation
+
+    useEffect(() => {
+        console.log("Saved Barcodes:", barcodes)
+    }, [barcodes])
     const handleImageChange = (index: number, field: "frontImage" | "backImage", file: File | undefined) => {
         if (!file) return;
 
@@ -75,7 +81,7 @@ export default function ProductTable() {
             category: row.category,
             gender: row.gender,
             color: "",
-
+            isSaved: false,   // ✅ IMPORTANT
             fit: row.fit,
             description: row.description,
 
@@ -339,6 +345,7 @@ JsBarcode("#${id}", "${row.barcode}", {
             xxxl: { ...defaultSize },
             xxxxl: { ...defaultSize },
         },
+        isSaved: false,   // ✅ add this
 
     })
 
@@ -675,12 +682,22 @@ JsBarcode("#${id}", "${row.barcode}", {
         });
 
         const result = await res.json();
-
         if (result.status === "success") {
+
             const updated = [...rows];
+
             updated[index].barcode = result.data;
+            updated[index].isSaved = true;
+
             setRows(updated);
+
+            // ✅ store barcode
+            const itemId = result.data.split("-")[1];
+
+            setBarcodes(prev => [...prev, itemId]);
+
             alert("Saved Successfully");
+
             addRow();
         }
     };
@@ -714,6 +731,44 @@ JsBarcode("#${id}", "${row.barcode}", {
         }
 
         return labels[index] || sizeKey.toUpperCase();
+    };
+
+    const saveItems = async () => {
+
+        if (barcodes.length === 0) {
+            alert("No items to save");
+            return;
+        }
+
+        const body = {
+            app_user_id: Number(localStorage.getItem("app_user_id")),
+            store_id: Number(localStorage.getItem("store_id")),
+            item_ids: barcodes
+        };
+
+        try {
+
+            const res = await fetch(`${API_BASE}/admin/save-list`, {
+                method: "POST",
+                headers: {
+                    accept: "application/json",
+                    "Content-Type": "application/json",
+                    Authorization: authtoken
+                },
+                body: JSON.stringify(body)
+            });
+
+            const result = await res.json();
+
+            if (result.status === "success") {
+                alert("Items saved successfully");
+            } else {
+                alert("Failed to save items");
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -760,14 +815,16 @@ JsBarcode("#${id}", "${row.barcode}", {
 
                         {rows.map((row, i) => (
 
-                            <tr key={row.id} className="border-t">
-
+                            <tr key={row.id} className={`border-t ${row.isSaved ? "bg-green-50" : ""}`}
+                            >
                                 <td className="px-2">
                                     <div style={{ position: "relative", width: "200px" }}>
                                         <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
                                             {/* Search & Add Input */}
                                             <input
                                                 placeholder="Search or add..."
+                                                disabled={row.isSaved}   // ✅ LOCK
+
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
                                                 list={`items-list-${i}`}
                                                 value={row.item}
@@ -821,6 +878,8 @@ JsBarcode("#${id}", "${row.barcode}", {
 
                                             {/* Brand Search/Add Input */}
                                             <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
                                                 list={`brands-list-${i}`}
                                                 onChange={(e) => updateField(i, "brand", e.target.value)}
                                                 value={row.brand}
@@ -868,6 +927,8 @@ JsBarcode("#${id}", "${row.barcode}", {
 
                                             {/* Category Search/Add Input */}
                                             <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
                                                 list={`categories-list-${i}`}
                                                 placeholder="Category..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
@@ -923,6 +984,8 @@ JsBarcode("#${id}", "${row.barcode}", {
                                     <div style={{ position: "relative", width: "150px" }}>
                                         <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
                                             <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
                                                 list={`colors-list-${i}`}
                                                 placeholder="Color..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
@@ -958,6 +1021,8 @@ JsBarcode("#${id}", "${row.barcode}", {
                                         <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
 
                                             <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
                                                 list={`fits-list-${i}`}
                                                 placeholder="Fit..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
@@ -1004,6 +1069,8 @@ JsBarcode("#${id}", "${row.barcode}", {
                                     <div style={{ position: "relative", width: "180px" }}>
                                         <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
                                             <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
                                                 list={`sleeves-list-${i}`}
                                                 placeholder="Sleeve Type..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
@@ -1026,6 +1093,8 @@ JsBarcode("#${id}", "${row.barcode}", {
                                     <div style={{ position: "relative", width: "180px" }}>
                                         <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
                                             <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
                                                 list={`necks-list-${i}`}
                                                 placeholder="Neck Type..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
@@ -1051,6 +1120,8 @@ JsBarcode("#${id}", "${row.barcode}", {
 
                                             {/* Pattern Search/Add Input */}
                                             <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
                                                 list={`patterns-list-${i}`}
                                                 placeholder="Pattern..."
                                                 style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
@@ -1104,6 +1175,8 @@ JsBarcode("#${id}", "${row.barcode}", {
                                             />
                                         )}
                                         <input
+                                            disabled={row.isSaved}   // ✅ LOCK
+
                                             type="file"
                                             className="text-[10px] w-24"
                                             accept="image/*"
@@ -1123,6 +1196,8 @@ JsBarcode("#${id}", "${row.barcode}", {
                                             />
                                         )}
                                         <input
+                                            disabled={row.isSaved}   // ✅ LOCK
+
                                             type="file"
                                             className="text-[10px] w-24"
                                             accept="image/*"
@@ -1141,6 +1216,8 @@ JsBarcode("#${id}", "${row.barcode}", {
                                                 {/* Visual Label */}
                                                 <div className="text-[10px] font-bold text-purple-600 mb-1">{displayLabel}</div>
                                                 <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
                                                     type="number"
                                                     placeholder="Price"
                                                     className="w-20 border p-1 text-xs"
@@ -1152,6 +1229,8 @@ JsBarcode("#${id}", "${row.barcode}", {
                                             <td className="px-2 bg-gray-50">
                                                 <div className="text-[10px] font-bold text-gray-400 mb-1">QTY</div>
                                                 <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
                                                     type="number"
                                                     placeholder="Qty"
                                                     className="w-16 border p-1 text-xs"
@@ -1174,8 +1253,10 @@ JsBarcode("#${id}", "${row.barcode}", {
 
                                 <td className="px-2">
                                     <button
+                                        disabled={row.isSaved}
                                         onClick={() => saveRow(i)}
-                                        className="text-green-600">
+                                        className={`text-green-600 ${row.isSaved ? "opacity-40 cursor-not-allowed" : ""}`}
+                                    >
                                         Save
                                     </button>
                                 </td>
@@ -1202,7 +1283,13 @@ JsBarcode("#${id}", "${row.barcode}", {
 
                     </tbody>
                 </table>
-
+                <div className="pt-20">
+                    <button
+                        onClick={saveItems}
+                        className="bg-green-500 text-white rounded-md px-4 py-2"
+                    >
+                        Save Items
+                    </button>                </div>
             </div>
 
         </div>
