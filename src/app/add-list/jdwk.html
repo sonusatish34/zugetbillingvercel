@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Barcode Label Preview</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @page {
+            size: 101.6mm 50.8mm;
+            margin: 0;
+        }
+
+        body {
+            width: 101.6mm;
+            height: 50.8mm;
+            margin: 0;
+        }
+
+        .rotate-wrapper {
+            transform: rotate(-90deg);
+            transform-origin: center;
+            scale: 0.85;
+        }
+    </style>
+</head>
+
+<body class="font-sans">
+
+    <div class="w-[101.6mm] h-[50.8mm] flex items-center justify-center overflow-hidden">
+
+        <div class="rotate-wrapper w-[48mm] h-[98mm] flex flex-col justify-between items-start p-[4mm] box-border">
+
+            <!-- Header -->
+            <div>
+
+                <!-- Barcode -->
+                <div class="w-full">
+
+                    <svg id="barcode" class="w-full h-[45px]"></svg>
+
+                    <div class="text-[11px] mt-[2px] text-center font-semibold">
+                        8901234567890
+                    </div>
+
+                </div>
+                <div class="text-[28px] font-black uppercase leading-none pb-3 pt-6">
+                    NIKE
+                </div>
+
+                <div class="text-[16px] mt-[5px] leading-[1.1] font-semibold">
+                    <p class="pb-3">SIZE: XL</p>
+                    <p class="pb-3">ITEM: SHIRT</p>
+                    <p class="pb-3">FABRIC: COTTON</p>
+                    <p class="pb-3">GENDER: MENS</p>
+                    <p class="pb-">FIT: OVERSIZED</p>
+                </div>
+
+            </div>
+
+
+
+
+
+            <!-- Footer -->
+            <div class="w-full flex justify-between items-end border-t border-dashed border-black pt-[4px]">
+
+                <div class="text-[9px] leading-none font-semibold">
+                    MAX RETAIL PRICE<br />
+                    (Incl. of all taxes)
+                </div>
+
+                <div class="text-[26px] font-bold">
+                    ₹799
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        JsBarcode("#barcode", "8901234567890", {
+            format: "CODE128",
+            width: 2,
+            height: 45,
+            displayValue: false,
+            margin: 0
+        });
+
+    </script>
+
+</body>
+
+</html>
