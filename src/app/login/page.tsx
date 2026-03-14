@@ -131,7 +131,7 @@ const Login = ({ role = "user" }) => {
   };
 
   const sendOtp = async () => {
-    const url = `https://dev.zuget.com/admin/send-otp`;
+    const url = `http://dev.zuget.com/admin/send-otp`;
 
     try {
       const response = await fetch(url, {
@@ -166,7 +166,7 @@ const Login = ({ role = "user" }) => {
   };
 
   const validateOtp = async () => {
-    const url = `https://dev.zuget.com/admin/otp-validate`;
+    const url = `http://dev.zuget.com/admin/otp-validate`;
     const userroleid = window.localStorage.getItem("user_role_id");
 
     try {
@@ -214,11 +214,11 @@ const Login = ({ role = "user" }) => {
       (otpInputRefs.current[0] as HTMLInputElement).focus();
     }
   }, [otpSuccess]);
-   let ref = useRef(0);
+  let ref = useRef(0);
 
   function handleClick() {
     console.log("clcied");
-    
+
     ref.current = ref.current + 1;
   };
 
@@ -235,7 +235,7 @@ const Login = ({ role = "user" }) => {
       }}
     >
       <div>
-       
+
       </div>
       <div className="flex flex-col md:flex-row w-full md:w-auto justify-center items-center gap-0">
         <div className="bg-black h-32 sm:h-40 md:h-96 lg:h-96 w-full md:w-80 lg:w-96 md:rounded-l-md rounded-tl-md rounded-tr-md  md:rounded-tr-none">

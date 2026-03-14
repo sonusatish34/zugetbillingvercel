@@ -42,7 +42,7 @@ interface Order {
 }
 
 /* ================= CONFIG ================= */
-const API_URL = 'https://dev.zuget.com/admin/online-orders?status=booked';
+const API_URL = 'http://dev.zuget.com/admin/online-orders?status=booked';
 const PAGE_SIZE = 10;
 
 export default function TotalItemsPage() {
@@ -147,8 +147,8 @@ export default function TotalItemsPage() {
       accessorKey: 'status',
       cell: ({ row }) => (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.original.status === 'booked'
-            ? 'bg-blue-100 text-blue-800'
-            : 'bg-gray-100 text-gray-800'
+          ? 'bg-blue-100 text-blue-800'
+          : 'bg-gray-100 text-gray-800'
           }`}>
           {row.original.status}
         </span>

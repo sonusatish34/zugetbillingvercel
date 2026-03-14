@@ -58,7 +58,7 @@ export default function UploadZipPage() {
   const fetchUploads = async () => {
     try {
       const res = await fetch(
-        "https://dev.zuget.com/admin/uploaded-zips",
+        "http://dev.zuget.com/admin/uploaded-zips",
         {
           headers: {
             Authorization: localStorage.getItem(`${localStorage.getItem("user_phone")}_token`) || "",
@@ -91,7 +91,7 @@ export default function UploadZipPage() {
       setLoading(true);
 
       const res = await fetch(
-        "https://dev.zuget.com/admin/upload-zip",
+        "http://dev.zuget.com/admin/upload-zip",
         {
           method: "POST",
           headers: {
@@ -201,8 +201,8 @@ function UploadCard({ item }: { item: UploadItem }) {
         </p>
         <p
           className={`text-xs mt-1 ${item.status === "processed"
-              ? "text-green-600"
-              : "text-yellow-600"
+            ? "text-green-600"
+            : "text-yellow-600"
             }`}
         >
           {item.status}
@@ -214,7 +214,7 @@ function UploadCard({ item }: { item: UploadItem }) {
         target="_blank"
         className="p-2 rounded-full bg-purple-600  flex items-center gap-x-2 text-white hover:scale-90"
       >
-        <Download size={20}  className=""/>
+        <Download size={20} className="" />
         <button>Sample File</button>
       </a>
     </div>

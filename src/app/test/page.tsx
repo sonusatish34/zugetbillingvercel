@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 /* ================== CONFIG ================== */
-const API_BASE = "https://dev.zuget.com";
-const API_URL = "https://dev.zuget.com/admin/add-items";
+const API_BASE = "http://dev.zuget.com";
+const API_URL = "http://dev.zuget.com/admin/add-items";
 
 /* ================== TYPES ================== */
 interface Option {
@@ -129,7 +129,7 @@ export default function AddItemPage() {
     const formdata = new FormData();
     formdata.append("file", file);
 
-    const res = await fetch("https://dev.zuget.com/s3/image-file", {
+    const res = await fetch("http://dev.zuget.com/s3/image-file", {
       method: "POST",
       headers: {
         accept: "application/json",
@@ -404,8 +404,8 @@ export default function AddItemPage() {
             <button
               onClick={() => setActiveTab("single")}
               className={`px-8 py-3 rounded-t-xl font-semibold transition-all duration-300 flex items-center gap-2 ${activeTab === "single"
-                  ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-lg shadow-indigo-500/25 -mb-px z-10"
-                  : "text-slate-600 hover:text-indigo-600 hover:bg-slate-50"
+                ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-lg shadow-indigo-500/25 -mb-px z-10"
+                : "text-slate-600 hover:text-indigo-600 hover:bg-slate-50"
                 }`}
             >
               <div className={`w-3 h-3 rounded-full ${activeTab === "single" ? "bg-white/30" : "bg-indigo-400/50"
@@ -415,8 +415,8 @@ export default function AddItemPage() {
             <button
               onClick={() => setActiveTab("bulk")}
               className={`px-8 py-3 rounded-t-xl font-semibold ml-2 transition-all duration-300 flex items-center gap-2 ${activeTab === "bulk"
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 -mb-px z-10"
-                  : "text-slate-600 hover:text-emerald-600 hover:bg-slate-50"
+                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 -mb-px z-10"
+                : "text-slate-600 hover:text-emerald-600 hover:bg-slate-50"
                 }`}
             >
               <div className={`w-3 h-3 rounded-full ${activeTab === "bulk" ? "bg-white/30" : "bg-emerald-400/50"

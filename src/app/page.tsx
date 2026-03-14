@@ -44,7 +44,7 @@ export default function Dashboard() {
     async function checkAuth() {
       try {
         const response = await fetch(
-          "https://dev.zuget.com/admin/merchant-home",
+          "http://dev.zuget.com/admin/merchant-home",
           {
             method: "GET",
             headers: {
