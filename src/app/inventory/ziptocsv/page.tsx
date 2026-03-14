@@ -58,7 +58,7 @@ export default function UploadZipPage() {
   const fetchUploads = async () => {
     try {
       const res = await fetch(
-        "https://dev.zuget.com/admin/uploaded-zips",
+        "https://api.zuget.com/admin/uploaded-zips",
         {
           headers: {
             Authorization: localStorage.getItem(`${localStorage.getItem("user_phone")}_token`) || "",
@@ -91,7 +91,7 @@ export default function UploadZipPage() {
       setLoading(true);
 
       const res = await fetch(
-        "https://dev.zuget.com/admin/upload-zip",
+        "https://api.zuget.com/admin/upload-zip",
         {
           method: "POST",
           headers: {

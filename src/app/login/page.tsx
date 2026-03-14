@@ -131,7 +131,7 @@ const Login = ({ role = "user" }) => {
   };
 
   const sendOtp = async () => {
-    const url = `https://dev.zuget.com/admin/send-otp`;
+    const url = `https://api.zuget.com/admin/send-otp`;
 
     try {
       const response = await fetch(url, {
@@ -166,7 +166,7 @@ const Login = ({ role = "user" }) => {
   };
 
   const validateOtp = async () => {
-    const url = `https://dev.zuget.com/admin/otp-validate`;
+    const url = `https://api.zuget.com/admin/otp-validate`;
     const userroleid = window.localStorage.getItem("user_role_id");
 
     try {

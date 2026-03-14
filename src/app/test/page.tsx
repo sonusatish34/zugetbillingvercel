@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 
 /* ================== CONFIG ================== */
-const API_BASE = "https://dev.zuget.com";
-const API_URL = "https://dev.zuget.com/admin/add-items";
+const API_BASE = "https://api.zuget.com";
+const API_URL = "https://api.zuget.com/admin/add-items";
 
 /* ================== TYPES ================== */
 interface Option {
@@ -129,7 +129,7 @@ export default function AddItemPage() {
     const formdata = new FormData();
     formdata.append("file", file);
 
-    const res = await fetch("https://dev.zuget.com/s3/image-file", {
+    const res = await fetch("https://api.zuget.com/s3/image-file", {
       method: "POST",
       headers: {
         accept: "application/json",

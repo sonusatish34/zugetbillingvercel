@@ -42,7 +42,7 @@ interface Order {
 }
 
 /* ================= CONFIG ================= */
-const API_URL = 'https://dev.zuget.com/admin/online-orders?status=delivered';
+const API_URL = 'https://api.zuget.com/admin/online-orders?status=delivered';
 const PAGE_SIZE = 10;
 
 export default function TotalItemsPage() {
