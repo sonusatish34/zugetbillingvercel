@@ -42,9 +42,11 @@ type ProductRow = {
 }
 
 export default function ProductTable() {
+    const [prevAddedItems, setPrevAddedItems] = useState<Boolean>(false)
     const [previews, setPreviews] = useState<{ [key: string]: { front?: string; back?: string } }>({});
     const [barcodes, setBarcodes] = useState<string[]>([])
     // 2. Add function to handle file selection and preview generation
+
 
     useEffect(() => {
         console.log("Saved Barcodes:", barcodes)
@@ -237,6 +239,20 @@ svg{
   font-weight:bold;
 }
 
+.store_name{
+  background:#000;
+  color:#fff;
+  padding:4px 8px;
+  font-size:12px;
+  border-radius:4px;
+  text-transform:uppercase;
+  display:inline-block;
+  margin-bottom:6px;
+
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
 </style>
 </head>
 
@@ -256,6 +272,7 @@ svg{
   <div class="portrait-wrapper">
 
     <div>
+                          <p class="store_name">${localStorage.getItem('store_name')}</p>
 
       <div class="barcode-section">
         <svg id="${id}"></svg>
@@ -418,28 +435,68 @@ JsBarcode("#${id}", "${row.barcode}", {
     // const brands = ["Nike", "Puma", "Zara"]
     const [brandsList, setBrandsList] = useState<string[]>([]);
 
-    // Fetch brands on load
+    // Fetch brands from Zuget API
     useEffect(() => {
-        fetch("http://localhost:5000/brands") // Adjust URL to your backend endpoint
-            .then(res => res.json())
-            .then(data => setBrandsList(data));
+        const fetchBrands = async () => {
+            const storeId = localStorage.getItem("store_id");
+
+            const res = await fetch(`${API_BASE}/util/store-brands?store_id=${storeId}`, {
+                headers: {
+                    accept: "application/json",
+                    Authorization: authtoken
+                }
+            });
+
+            const json = await res.json();
+
+            if (json.status === "success") {
+                const brandNames = json.data.map((b: any) => b.name);
+                setBrandsList(brandNames);
+            }
+        };
+
+        fetchBrands();
     }, []);
 
-    // Function to add a new brand
+
+    // Add new brand using Zuget API
     const addBrand = async (value: string) => {
+
         const brand = value.trim();
         if (!brand) return;
 
-        const res = await fetch("http://localhost:5000/brands", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ brand })
-        });
+        const storeId = localStorage.getItem("store_id");
 
-        const updated = await res.json();
-        setBrandsList(updated);
+        const res = await fetch(
+            `${API_BASE}/util/add-brand?brand=${encodeURIComponent(brand)}&store_id=${storeId}`,
+            {
+                method: "GET",
+                headers: {
+                    accept: "application/json",
+                    Authorization: authtoken
+                }
+            }
+        );
+
+        const result = await res.json();
+
+        if (result.status === "success") {
+            // Refresh brand list
+            const refresh = await fetch(`${API_BASE}/util/store-brands?store_id=${storeId}`, {
+                headers: {
+                    accept: "application/json",
+                    Authorization: authtoken
+                }
+            });
+
+            const json = await refresh.json();
+
+            const brandNames = json.data.map((b: any) => b.name);
+            setBrandsList(brandNames);
+
+            alert("Brand added successfully");
+        }
     };
-
     const [colorsList, setColorsList] = useState<string[]>([]);
 
     // Fetch colors on load
@@ -774,524 +831,532 @@ JsBarcode("#${id}", "${row.barcode}", {
     return (
 
         <div className="p-6">
+            <div>
+                <button>Add New Items</button>
+                <button>previously added Items</button>
+            </div>
+            <div>
+                <div className="overflow-auto border rounded-xl">
 
-            <div className="overflow-auto border rounded-xl">
+                    <table className="min-w-full text-center border text-sm">
 
-                <table className="min-w-full text-center border text-sm">
+                        <thead className="bg-gray-100">
 
-                    <thead className="bg-gray-100">
+                            <tr className="">
+                                <th className="p-4">Item Name</th>
+                                <th className="px-2">Brand</th>
+                                <th>Category</th>
+                                <th>Gender</th>
+                                <th>Color</th>
+                                <th>Fit</th>
+                                <th>sleeve</th>
+                                <th>Neck</th>
+                                <th>Pattern</th>
+                                <th>Front Image</th>
+                                <th>Back Image</th>
 
-                        <tr className="">
-                            <th className="p-4">Item Name</th>
-                            <th className="px-2">Brand</th>
-                            <th>Category</th>
-                            <th>Gender</th>
-                            <th>Color</th>
-                            <th>Fit</th>
-                            <th>sleeve</th>
-                            <th>Neck</th>
-                            <th>Pattern</th>
-                            <th>Front Image</th>
-                            <th>Back Image</th>
+                                {sizes.map(size => (
+                                    <>
+                                        <th key={size + "p"}>{size.toUpperCase()} Price</th>
+                                        <th key={size + "q"}>{size.toUpperCase()} Qty</th>
+                                    </>
+                                ))}
 
-                            {sizes.map(size => (
-                                <>
-                                    <th key={size + "p"}>{size.toUpperCase()} Price</th>
-                                    <th key={size + "q"}>{size.toUpperCase()} Qty</th>
-                                </>
-                            ))}
-
-                            <th>Description</th>
-                            <th>Barcode</th>
-                            <th>Save</th>
-                            <th>Clone</th>
-                            <th>Print</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        {rows.map((row, i) => (
-
-                            <tr key={row.id} className={`border-t ${row.isSaved ? "bg-green-50" : ""}`}
-                            >
-                                <td className="px-2">
-                                    <div style={{ position: "relative", width: "200px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-                                            {/* Search & Add Input */}
-                                            <input
-                                                placeholder="Search or add..."
-                                                disabled={row.isSaved}   // ✅ LOCK
-
-                                                style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
-                                                list={`items-list-${i}`}
-                                                value={row.item}
-                                                onChange={(e) => updateField(i, "item", e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        addItem(e.currentTarget.value);
-                                                        e.currentTarget.value = ""; // Clear after adding
-                                                        e.preventDefault()
-
-                                                    }
-                                                }}
-                                                onFocus={e => {
-                                                    // ✅ Force show all options on focus
-                                                    e.currentTarget.size = 10
-                                                }}
-                                            />
-
-                                            {/* Small "Add" icon-button inside the input bar */}
-                                            <button
-                                                onClick={(e) => {
-                                                    const input = e.currentTarget.previousSibling as HTMLInputElement;
-                                                    addItem(input.value);
-                                                    input.value = "";
-                                                }}
-                                                style={{
-                                                    border: "none",
-                                                    background: "transparent",
-                                                    cursor: "pointer",
-                                                    padding: "2px 6px",
-                                                    fontSize: "18px",
-                                                    color: "#ffffff",
-                                                    backgroundColor: "purple"
-                                                }}
-                                                title="Add new item"
-                                                className="rounded-md"
-                                            >+</button>
-                                        </div>
-
-                                        <datalist id={`items-list-${i}`}>
-                                            {items.map((v) => (
-                                                <option key={v} value={v} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                </td>
-
-                                <td className="px-2">
-                                    <div style={{ position: "relative", width: "180px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-
-                                            {/* Brand Search/Add Input */}
-                                            <input
-                                                disabled={row.isSaved}   // ✅ LOCK
-
-                                                list={`brands-list-${i}`}
-                                                onChange={(e) => updateField(i, "brand", e.target.value)}
-                                                value={row.brand}
-
-                                                placeholder="Brand..."
-                                                style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        addBrand(e.currentTarget.value);
-                                                    }
-                                                }}
-                                            />
-
-                                            {/* Integrated Add Button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    const input = e.currentTarget.previousSibling as HTMLInputElement;
-                                                    addBrand(input.value);
-                                                }}
-                                                style={{
-                                                    border: "none",
-                                                    background: "purple",
-                                                    color: "white",
-                                                    cursor: "pointer",
-                                                    padding: "2px 8px",
-                                                    fontSize: "18px",
-                                                }}
-                                                className="rounded-md"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-
-                                        <datalist id={`brands-list-${i}`}>
-                                            {brandsList.map((b) => (
-                                                <option key={b} value={b} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                </td>
-
-                                <td className="px-2">
-                                    <div style={{ position: "relative", width: "180px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-
-                                            {/* Category Search/Add Input */}
-                                            <input
-                                                disabled={row.isSaved}   // ✅ LOCK
-
-                                                list={`categories-list-${i}`}
-                                                placeholder="Category..."
-                                                style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
-                                                onChange={(e) => updateField(i, "category", e.target.value)}
-                                                value={row.category}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        addCategory(e.currentTarget.value);
-                                                    }
-                                                }}
-                                            />
-
-                                            {/* Integrated Add Button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    const input = e.currentTarget.previousSibling as HTMLInputElement;
-                                                    addCategory(input.value);
-                                                }}
-                                                style={{
-                                                    border: "none",
-                                                    background: "purple",
-                                                    color: "white",
-                                                    cursor: "pointer",
-                                                    padding: "2px 8px",
-                                                    fontSize: "18px",
-                                                }}
-                                                className="rounded-md"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-
-                                        <datalist id={`categories-list-${i}`}>
-                                            {categoriesList.map((cat) => (
-                                                <option key={cat} value={cat} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                </td>
-
-                                <td className="px-2">
-                                    <select
-                                        value={row.gender || "Select"}
-                                        onChange={(e) => updateField(i, "gender", e.target.value)}
-                                    >
-                                        <option value="Select">Select</option>
-                                        {genders.map(v => <option key={v} value={v}>{v}</option>)}
-                                    </select>
-                                </td>
-
-
-                                <td className="px-2">
-                                    <div style={{ position: "relative", width: "150px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-                                            <input
-                                                disabled={row.isSaved}   // ✅ LOCK
-
-                                                list={`colors-list-${i}`}
-                                                placeholder="Color..."
-                                                style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
-                                                onChange={(e) => updateField(i, "color", e.target.value)}
-                                                value={row.color}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        addColor(e.currentTarget.value);
-                                                    }
-                                                }}
-                                            />
-                                            <button
-                                                onClick={(e) => {
-                                                    const input = e.currentTarget.previousSibling as HTMLInputElement;
-                                                    addColor(input.value);
-                                                }}
-                                                style={{ border: "none", background: "purple", color: "white", cursor: "pointer", padding: "2px 6px" }}
-                                                className="rounded-md"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                        <datalist id={`colors-list-${i}`}>
-                                            {colorsList.map((c) => (
-                                                <option key={c} value={c} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                </td>
-
-                                <td className="px-2">
-                                    <div style={{ position: "relative", width: "160px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-
-                                            <input
-                                                disabled={row.isSaved}   // ✅ LOCK
-
-                                                list={`fits-list-${i}`}
-                                                placeholder="Fit..."
-                                                style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
-                                                // Value is stored in state via updateField
-                                                onChange={(e) => updateField(i, "fit", e.target.value)}
-                                                value={row.fit}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        addFit(e.currentTarget.value);
-                                                    }
-                                                }}
-                                            />
-
-                                            <button
-                                                onClick={(e) => {
-                                                    // Logic to grab the input value next to the button
-                                                    const input = e.currentTarget.previousSibling as HTMLInputElement;
-                                                    addFit(input.value);
-                                                }}
-                                                style={{
-                                                    border: "none",
-                                                    background: "purple",
-                                                    color: "white",
-                                                    cursor: "pointer",
-                                                    padding: "2px 8px",
-                                                    fontSize: "18px",
-                                                }}
-                                                className="rounded-md"
-                                                title="Add new fit"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-
-                                        <datalist id={`fits-list-${i}`}>
-                                            {fits.map((f: any) => (
-                                                // Use f.name because your fetchData maps json?.data?.results
-                                                <option key={f.id || f.name} value={f.name} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                </td>
-                                <td className="px-2">
-                                    <div style={{ position: "relative", width: "180px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-                                            <input
-                                                disabled={row.isSaved}   // ✅ LOCK
-
-                                                list={`sleeves-list-${i}`}
-                                                placeholder="Sleeve Type..."
-                                                style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
-                                                onChange={(e) => updateField(i, "sleeve_type", e.target.value)}
-                                                value={row.sleeve_type}
-                                                onKeyDown={(e) => e.key === "Enter" && addSleeve(e.currentTarget.value)}
-                                            />
-                                            <button
-                                                onClick={(e) => addSleeve((e.currentTarget.previousSibling as HTMLInputElement).value)}
-                                                style={{ border: "none", background: "purple", color: "white", cursor: "pointer", padding: "2px 8px", fontSize: "18px" }}
-                                                className="rounded-md"
-                                            >+</button>
-                                        </div>
-                                        <datalist id={`sleeves-list-${i}`}>
-                                            {sleevesList.map((s) => <option key={s} value={s} />)}
-                                        </datalist>
-                                    </div>
-                                </td>
-                                <td className="px-2">
-                                    <div style={{ position: "relative", width: "180px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-                                            <input
-                                                disabled={row.isSaved}   // ✅ LOCK
-
-                                                list={`necks-list-${i}`}
-                                                placeholder="Neck Type..."
-                                                style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
-                                                // onChange={(e) => updateField(i, "neck_type", e.target.value)}
-                                                onChange={(e) => updateField(i, "neck_type", e.target.value)}
-                                                value={row.neck_type}
-                                                onKeyDown={(e) => e.key === "Enter" && addNeck(e.currentTarget.value)}
-                                            />
-                                            <button
-                                                onClick={(e) => addNeck((e.currentTarget.previousSibling as HTMLInputElement).value)}
-                                                style={{ border: "none", background: "purple", color: "white", cursor: "pointer", padding: "2px 8px", fontSize: "18px" }}
-                                                className="rounded-md"
-                                            >+</button>
-                                        </div>
-                                        <datalist id={`necks-list-${i}`}>
-                                            {necksList.map((n) => <option key={n} value={n} />)}
-                                        </datalist>
-                                    </div>
-                                </td>
-                                <td className="px-2">
-                                    <div style={{ position: "relative", width: "180px" }}>
-                                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-
-                                            {/* Pattern Search/Add Input */}
-                                            <input
-                                                disabled={row.isSaved}   // ✅ LOCK
-
-                                                list={`patterns-list-${i}`}
-                                                placeholder="Pattern..."
-                                                style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
-                                                // onChange={(e) => updateField(i, "pattern", e.target.value)}
-                                                onChange={(e) => updateField(i, "pattern", e.target.value)}
-                                                value={row.pattern}
-
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") {
-                                                        addPattern(e.currentTarget.value);
-                                                    }
-                                                }}
-                                            />
-
-                                            {/* Integrated Add Button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    const input = e.currentTarget.previousSibling as HTMLInputElement;
-                                                    addPattern(input.value);
-                                                }}
-                                                style={{
-                                                    border: "none",
-                                                    background: "purple",
-                                                    color: "white",
-                                                    cursor: "pointer",
-                                                    padding: "2px 8px",
-                                                    fontSize: "18px",
-                                                }}
-                                                className="rounded-md"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-
-                                        <datalist id={`patterns-list-${i}`}>
-                                            {patterns.map((p: any) => (
-                                                <option key={p.id || p.name} value={p.name} />
-                                            ))}
-                                        </datalist>
-                                    </div>
-                                </td>
-
-                                {/* 4. Updated Front Image Column with Preview */}
-                                <td className="px-2">
-                                    <div className="flex flex-col items-center gap-1 py-2">
-                                        {previews[row.id]?.front && (
-                                            <img
-                                                src={previews[row.id].front}
-                                                alt="Front Preview"
-                                                className="w-12 h-12 object-cover rounded border shadow-sm"
-                                            />
-                                        )}
-                                        <input
-                                            disabled={row.isSaved}   // ✅ LOCK
-
-                                            type="file"
-                                            className="text-[10px] w-24"
-                                            accept="image/*"
-                                            onChange={(e) => handleImageChange(i, "frontImage", e.target.files?.[0])}
-                                        />
-                                    </div>
-                                </td>
-
-                                {/* 5. Updated Back Image Column with Preview */}
-                                <td className="px-2">
-                                    <div className="flex flex-col items-center gap-1 py-2">
-                                        {previews[row.id]?.back && (
-                                            <img
-                                                src={previews[row.id].back}
-                                                alt="Back Preview"
-                                                className="w-12 h-12 object-cover rounded border shadow-sm"
-                                            />
-                                        )}
-                                        <input
-                                            disabled={row.isSaved}   // ✅ LOCK
-
-                                            type="file"
-                                            className="text-[10px] w-24"
-                                            accept="image/*"
-                                            onChange={(e) => handleImageChange(i, "backImage", e.target.files?.[0])}
-                                        />
-                                    </div>
-                                </td>
-
-                                {sizes.map((size) => {
-                                    // Determine the label for this specific row and size key
-                                    const displayLabel = getDisplaySize(row, size);
-
-                                    return (
-                                        <React.Fragment key={size + i}>
-                                            <td className="px-2 border-l">
-                                                {/* Visual Label */}
-                                                <div className="text-[10px] font-bold text-purple-600 mb-1">{displayLabel}</div>
-                                                <input
-                                                    disabled={row.isSaved}   // ✅ LOCK
-
-                                                    type="number"
-                                                    placeholder="Price"
-                                                    className="w-20 border p-1 text-xs"
-                                                    value={row.sizes[size as keyof Sizes].price || ""}
-                                                    onChange={(e) => updatePrice(i, size as keyof Sizes, Number(e.target.value))}
-                                                />
-                                            </td>
-
-                                            <td className="px-2 bg-gray-50">
-                                                <div className="text-[10px] font-bold text-gray-400 mb-1">QTY</div>
-                                                <input
-                                                    disabled={row.isSaved}   // ✅ LOCK
-
-                                                    type="number"
-                                                    placeholder="Qty"
-                                                    className="w-16 border p-1 text-xs"
-                                                    value={row.sizes[size as keyof Sizes].quantity || ""}
-                                                    onChange={(e) => updateQty(i, size as keyof Sizes, Number(e.target.value))}
-                                                />
-                                            </td>
-                                        </React.Fragment>
-                                    );
-                                })}
-
-                                <td className="px-2">
-                                    <textarea
-                                        className="border w-28"
-                                        onChange={(e) => updateField(i, "description", e.target.value)}
-                                    />
-                                </td>
-
-                                <td className="text-xs">{row.barcode}</td>
-
-                                <td className="px-2">
-                                    <button
-                                        disabled={row.isSaved}
-                                        onClick={() => saveRow(i)}
-                                        className={`text-green-600 ${row.isSaved ? "opacity-40 cursor-not-allowed" : ""}`}
-                                    >
-                                        Save
-                                    </button>
-                                </td>
-
-                                <td className="px-2">
-                                    <button
-                                        onClick={() => duplicateRow(row, i)}
-                                        className="text-blue-600">
-                                        Clone
-                                    </button>
-                                </td>
-
-                                <td >
-                                    <button
-                                        onClick={() => printLabels(row)}
-                                        className="text-purple-600">
-                                        Print
-                                    </button>
-                                </td>
+                                <th>Description</th>
+                                <th>Barcode</th>
+                                <th>Save</th>
+                                <th>Clone</th>
+                                <th>Print</th>
 
                             </tr>
 
-                        ))}
+                        </thead>
 
-                    </tbody>
-                </table>
+                        <tbody>
+
+                            {rows.map((row, i) => (
+
+                                <tr key={row.id} className={`border-t ${row.isSaved ? "bg-green-50" : ""}`}
+                                >
+                                    <td className="px-4">
+                                        <div style={{ position: "relative", width: "200px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+                                                {/* Search & Add Input */}
+                                                <input
+                                                    placeholder="Search or add..."
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
+                                                    style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
+                                                    list={`items-list-${i}`}
+                                                    value={row.item}
+                                                    onChange={(e) => updateField(i, "item", e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            addItem(e.currentTarget.value);
+                                                            e.currentTarget.value = ""; // Clear after adding
+                                                            e.preventDefault()
+
+                                                        }
+                                                    }}
+                                                    onFocus={e => {
+                                                        // ✅ Force show all options on focus
+                                                        e.currentTarget.size = 10
+                                                    }}
+                                                />
+
+                                                {/* Small "Add" icon-button inside the input bar */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                                        addItem(input.value);
+                                                        input.value = "";
+                                                    }}
+                                                    style={{
+                                                        border: "none",
+                                                        background: "transparent",
+                                                        cursor: "pointer",
+                                                        padding: "2px 6px",
+                                                        fontSize: "18px",
+                                                        color: "#ffffff",
+                                                        backgroundColor: "purple"
+                                                    }}
+                                                    title="Add new item"
+                                                    className="rounded-md"
+                                                >+</button>
+                                            </div>
+
+                                            <datalist id={`items-list-${i}`}>
+                                                {items.map((v) => (
+                                                    <option key={v} value={v} />
+                                                ))}
+                                            </datalist>
+                                        </div>
+                                    </td>
+
+                                    <td className="px-4">
+                                        <div style={{ position: "relative", width: "180px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+
+                                                {/* Brand Search/Add Input */}
+                                                <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
+                                                    list={`brands-list-${i}`}
+                                                    onChange={(e) => updateField(i, "brand", e.target.value)}
+                                                    value={row.brand}
+
+                                                    placeholder="Brand..."
+                                                    style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            addBrand(e.currentTarget.value);
+                                                        }
+                                                    }}
+                                                />
+
+                                                {/* Integrated Add Button */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                                        addBrand(input.value);
+                                                    }}
+                                                    style={{
+                                                        border: "none",
+                                                        background: "purple",
+                                                        color: "white",
+                                                        cursor: "pointer",
+                                                        padding: "2px 8px",
+                                                        fontSize: "18px",
+                                                    }}
+                                                    className="rounded-md"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+
+                                            <datalist id={`brands-list-${i}`}>
+                                                {brandsList.map((b) => (
+                                                    <option key={b} value={b} />
+                                                ))}
+                                            </datalist>
+                                        </div>
+                                    </td>
+
+                                    <td className="px-4">
+                                        <div style={{ position: "relative", width: "180px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+
+                                                {/* Category Search/Add Input */}
+                                                <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
+                                                    list={`categories-list-${i}`}
+                                                    placeholder="Category..."
+                                                    style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
+                                                    onChange={(e) => updateField(i, "category", e.target.value)}
+                                                    value={row.category}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            addCategory(e.currentTarget.value);
+                                                        }
+                                                    }}
+                                                />
+
+                                                {/* Integrated Add Button */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                                        addCategory(input.value);
+                                                    }}
+                                                    style={{
+                                                        border: "none",
+                                                        background: "purple",
+                                                        color: "white",
+                                                        cursor: "pointer",
+                                                        padding: "2px 8px",
+                                                        fontSize: "18px",
+                                                    }}
+                                                    className="rounded-md"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+
+                                            <datalist id={`categories-list-${i}`}>
+                                                {categoriesList.map((cat) => (
+                                                    <option key={cat} value={cat} />
+                                                ))}
+                                            </datalist>
+                                        </div>
+                                    </td>
+
+                                    <td className="px-4">
+                                        <select
+                                            value={row.gender || "Select"}
+                                            onChange={(e) => updateField(i, "gender", e.target.value)}
+                                        >
+                                            <option value="Select">Select</option>
+                                            {genders.map(v => <option key={v} value={v}>{v}</option>)}
+                                        </select>
+                                    </td>
+
+
+                                    <td className="px-4">
+                                        <div style={{ position: "relative", width: "150px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+                                                <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
+                                                    list={`colors-list-${i}`}
+                                                    placeholder="Color..."
+                                                    style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
+                                                    onChange={(e) => updateField(i, "color", e.target.value)}
+                                                    value={row.color}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            addColor(e.currentTarget.value);
+                                                        }
+                                                    }}
+                                                />
+                                                <button
+                                                    onClick={(e) => {
+                                                        const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                                        addColor(input.value);
+                                                    }}
+                                                    style={{ border: "none", background: "purple", color: "white", cursor: "pointer", padding: "2px 6px" }}
+                                                    className="rounded-md"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                            <datalist id={`colors-list-${i}`}>
+                                                {colorsList.map((c) => (
+                                                    <option key={c} value={c} />
+                                                ))}
+                                            </datalist>
+                                        </div>
+                                    </td>
+
+                                    <td className="px-4">
+                                        <div style={{ position: "relative", width: "160px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+
+                                                <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
+                                                    list={`fits-list-${i}`}
+                                                    placeholder="Fit..."
+                                                    style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
+                                                    // Value is stored in state via updateField
+                                                    onChange={(e) => updateField(i, "fit", e.target.value)}
+                                                    value={row.fit}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            addFit(e.currentTarget.value);
+                                                        }
+                                                    }}
+                                                />
+
+                                                <button
+                                                    onClick={(e) => {
+                                                        // Logic to grab the input value next to the button
+                                                        const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                                        addFit(input.value);
+                                                    }}
+                                                    style={{
+                                                        border: "none",
+                                                        background: "purple",
+                                                        color: "white",
+                                                        cursor: "pointer",
+                                                        padding: "2px 8px",
+                                                        fontSize: "18px",
+                                                    }}
+                                                    className="rounded-md"
+                                                    title="Add new fit"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+
+                                            <datalist id={`fits-list-${i}`}>
+                                                {fits.map((f: any) => (
+                                                    // Use f.name because your fetchData maps json?.data?.results
+                                                    <option key={f.id || f.name} value={f.name} />
+                                                ))}
+                                            </datalist>
+                                        </div>
+                                    </td>
+                                    <td className="px-4">
+                                        <div style={{ position: "relative", width: "180px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+                                                <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
+                                                    list={`sleeves-list-${i}`}
+                                                    placeholder="Sleeve Type..."
+                                                    style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
+                                                    onChange={(e) => updateField(i, "sleeve_type", e.target.value)}
+                                                    value={row.sleeve_type}
+                                                    onKeyDown={(e) => e.key === "Enter" && addSleeve(e.currentTarget.value)}
+                                                />
+                                                <button
+                                                    onClick={(e) => addSleeve((e.currentTarget.previousSibling as HTMLInputElement).value)}
+                                                    style={{ border: "none", background: "purple", color: "white", cursor: "pointer", padding: "2px 8px", fontSize: "18px" }}
+                                                    className="rounded-md"
+                                                >+</button>
+                                            </div>
+                                            <datalist id={`sleeves-list-${i}`}>
+                                                {sleevesList.map((s) => <option key={s} value={s} />)}
+                                            </datalist>
+                                        </div>
+                                    </td>
+                                    <td className="px-4">
+                                        <div style={{ position: "relative", width: "180px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+                                                <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
+                                                    list={`necks-list-${i}`}
+                                                    placeholder="Neck Type..."
+                                                    style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
+                                                    // onChange={(e) => updateField(i, "neck_type", e.target.value)}
+                                                    onChange={(e) => updateField(i, "neck_type", e.target.value)}
+                                                    value={row.neck_type}
+                                                    onKeyDown={(e) => e.key === "Enter" && addNeck(e.currentTarget.value)}
+                                                />
+                                                <button
+                                                    onClick={(e) => addNeck((e.currentTarget.previousSibling as HTMLInputElement).value)}
+                                                    style={{ border: "none", background: "purple", color: "white", cursor: "pointer", padding: "2px 8px", fontSize: "18px" }}
+                                                    className="rounded-md"
+                                                >+</button>
+                                            </div>
+                                            <datalist id={`necks-list-${i}`}>
+                                                {necksList.map((n) => <option key={n} value={n} />)}
+                                            </datalist>
+                                        </div>
+                                    </td>
+                                    <td className="px-4">
+                                        <div style={{ position: "relative", width: "180px" }}>
+                                            <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+
+                                                {/* Pattern Search/Add Input */}
+                                                <input
+                                                    disabled={row.isSaved}   // ✅ LOCK
+
+                                                    list={`patterns-list-${i}`}
+                                                    placeholder="Pattern..."
+                                                    style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
+                                                    // onChange={(e) => updateField(i, "pattern", e.target.value)}
+                                                    onChange={(e) => updateField(i, "pattern", e.target.value)}
+                                                    value={row.pattern}
+
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            addPattern(e.currentTarget.value);
+                                                        }
+                                                    }}
+                                                />
+
+                                                {/* Integrated Add Button */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        const input = e.currentTarget.previousSibling as HTMLInputElement;
+                                                        addPattern(input.value);
+                                                    }}
+                                                    style={{
+                                                        border: "none",
+                                                        background: "purple",
+                                                        color: "white",
+                                                        cursor: "pointer",
+                                                        padding: "2px 8px",
+                                                        fontSize: "18px",
+                                                    }}
+                                                    className="rounded-md"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+
+                                            <datalist id={`patterns-list-${i}`}>
+                                                {patterns.map((p: any) => (
+                                                    <option key={p.id || p.name} value={p.name} />
+                                                ))}
+                                            </datalist>
+                                        </div>
+                                    </td>
+
+                                    {/* 4. Updated Front Image Column with Preview */}
+                                    <td className="px-4">
+                                        <div className="flex flex-col items-center gap-1 py-2">
+                                            {previews[row.id]?.front && (
+                                                <img
+                                                    src={previews[row.id].front}
+                                                    alt="Front Preview"
+                                                    className="w-12 h-12 object-cover rounded border shadow-sm"
+                                                />
+                                            )}
+                                            <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
+                                                type="file"
+                                                className="text-[10px] w-24"
+                                                accept="image/*"
+                                                onChange={(e) => handleImageChange(i, "frontImage", e.target.files?.[0])}
+                                            />
+                                        </div>
+                                    </td>
+
+                                    {/* 5. Updated Back Image Column with Preview */}
+                                    <td className="px-4">
+                                        <div className="flex flex-col items-center gap-1 py-2">
+                                            {previews[row.id]?.back && (
+                                                <img
+                                                    src={previews[row.id].back}
+                                                    alt="Back Preview"
+                                                    className="w-12 h-12 object-cover rounded border shadow-sm"
+                                                />
+                                            )}
+                                            <input
+                                                disabled={row.isSaved}   // ✅ LOCK
+
+                                                type="file"
+                                                className="text-[10px] w-24"
+                                                accept="image/*"
+                                                onChange={(e) => handleImageChange(i, "backImage", e.target.files?.[0])}
+                                            />
+                                        </div>
+                                    </td>
+
+                                    {sizes.map((size) => {
+                                        // Determine the label for this specific row and size key
+                                        const displayLabel = getDisplaySize(row, size);
+
+                                        return (
+                                            <React.Fragment key={size + i}>
+                                                <td className="px-2 border-l">
+                                                    {/* Visual Label */}
+                                                    <div className="text-[10px] font-bold text-purple-600 mb-1">{displayLabel}</div>
+                                                    <input
+                                                        disabled={row.isSaved}   // ✅ LOCK
+
+                                                        type="number"
+                                                        placeholder="Price"
+                                                        className="w-20 border p-1 text-xs"
+                                                        value={row.sizes[size as keyof Sizes].price || ""}
+                                                        onChange={(e) => updatePrice(i, size as keyof Sizes, Number(e.target.value))}
+                                                    />
+                                                </td>
+
+                                                <td className="px-2 bg-gray-50">
+                                                    <div className="text-[10px] font-bold text-gray-400 mb-1">QTY</div>
+                                                    <input
+                                                        disabled={row.isSaved}   // ✅ LOCK
+
+                                                        type="number"
+                                                        placeholder="Qty"
+                                                        className="w-16 border p-1 text-xs"
+                                                        value={row.sizes[size as keyof Sizes].quantity || ""}
+                                                        onChange={(e) => updateQty(i, size as keyof Sizes, Number(e.target.value))}
+                                                    />
+                                                </td>
+                                            </React.Fragment>
+                                        );
+                                    })}
+
+                                    <td className="px-4">
+                                        <textarea
+                                            className="border w-28"
+                                            onChange={(e) => updateField(i, "description", e.target.value)}
+                                        />
+                                    </td>
+
+                                    <td className="text-xs">{row.barcode}</td>
+
+                                    <td className="px-4">
+                                        <button
+                                            disabled={row.isSaved}
+                                            onClick={() => saveRow(i)}
+                                            className={`text-green-600 ${row.isSaved ? "opacity-40 cursor-not-allowed" : ""}`}
+                                        >
+                                            Save
+                                        </button>
+                                    </td>
+
+                                    <td className="px-4">
+                                        <button
+                                            onClick={() => duplicateRow(row, i)}
+                                            className="text-blue-600">
+                                            Clone
+                                        </button>
+                                    </td>
+
+                                    <td >
+                                        <button
+                                            onClick={() => printLabels(row)}
+                                            className="text-purple-600">
+                                            Print
+                                        </button>
+                                    </td>
+
+                                </tr>
+
+                            ))}
+
+                        </tbody>
+                    </table>
+
+                </div>
                 <div className="pt-20">
                     <button
                         onClick={saveItems}
                         className="bg-green-500 text-white rounded-md px-4 py-2"
                     >
                         Save Items
-                    </button>                </div>
+                    </button>
+                </div>
             </div>
-
         </div>
+
     )
+
 }
