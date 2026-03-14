@@ -970,7 +970,7 @@ JsBarcode("#${id}", "${row.barcode}", {
         <div className="p-6">
             <div className="flex gap-x-10 pb-4">
                 <button onClick={() => { setPrevAddedItems(false) }} className={`${prevAddedItems === false ? 'border-b-2 border-purple-500' : ''} `}>Add New Items</button>
-                <button onClick={() => { setPrevAddedItems(true) }} className={`${prevAddedItems === true ? 'border-b-2 border-purple-500' : ''} `}>previously added Items</button>
+                <button onClick={() => { setPrevAddedItems(true) }} className={`${prevAddedItems === true ? 'border-b-2 border-purple-500' : ''} `}>previously added Items test</button>
             </div>
             {!prevAddedItems ?
                 <div>
