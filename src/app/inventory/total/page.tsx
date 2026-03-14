@@ -40,7 +40,7 @@ interface Item {
 }
 
 /* ================= CONFIG ================= */
-const API_URL = 'http://dev.zuget.com/admin/total-items';
+const API_URL = 'https://dev.zuget.com/admin/total-items';
 const PAGE_SIZE = 10;
 
 export default function TotalItemsPage() {
