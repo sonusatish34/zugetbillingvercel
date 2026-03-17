@@ -208,7 +208,7 @@ export default function AddItemPage() {
       setBulkRows(rows);
       setParsedCsv(true);
     } catch (err) {
-      alert("Invalid CSV format");
+      alert("Invalid C   SV format");
     }
   };
 
