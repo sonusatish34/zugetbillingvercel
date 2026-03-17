@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import React from "react";
+import { log } from "util";
 
-const API_BASE = "https://api.zuget.com";
+const API_BASE = "https://dev.zuget.com";
 const LOCAL_API_BASE = "http://localhost:5000";
 
 /* ---------------- TYPES ---------------- */
@@ -88,57 +89,7 @@ type ProductRow = {
 
 /* -------------- COMMON LOCAL-LIST HOOK -------------- */
 
-type LocalListType =
-  | "items"
-  | "colors"
-  | "categories"
-  | "sleevetypes"
-  | "necktypes";
 
-function useLocalList(type: LocalListType) {
-  const [list, setList] = useState<string[]>([]);
-
-  useEffect(() => {
-    const fetchList = async () => {
-      try {
-        const res = await fetch(`${LOCAL_API_BASE}/${type}`);
-        if (!res.ok) throw new Error("Failed to fetch " + type);
-        const data = await res.json();
-        setList(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Error fetching", type, err);
-      }
-    };
-    fetchList();
-  }, [type]);
-
-  const addValue = async (value: string) => {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-
-    const singular =
-      type === "sleevetypes"
-        ? "sleeve"
-        : type === "necktypes"
-        ? "neck"
-        : type.replace(/s$/, ""); // items->item, colors->color, categories->category
-
-    try {
-      const res = await fetch(`${LOCAL_API_BASE}/${type}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [singular]: trimmed }),
-      });
-      if (!res.ok) throw new Error("Failed to add " + type);
-      const updated = await res.json();
-      setList(Array.isArray(updated) ? updated : []);
-    } catch (err) {
-      console.error("Error adding to", type, err);
-    }
-  };
-
-  return { list, addValue };
-}
 
 /* ---------------- MAIN COMPONENT ---------------- */
 
@@ -147,7 +98,7 @@ export default function ProductTable() {
   const [previews, setPreviews] = useState<{
     [key: string]: { front?: string; back?: string };
   }>({});
-  const [barcodes, setBarcodes] = useState<string[]>([]);
+  const [barcodes, setBarcodes] = useState<number[]>([]);
 
   const [savedLists, setSavedLists] = useState<ListItem[]>([]);
   const [listItems, setListItems] = useState<ItemDetails[]>([]);
@@ -477,6 +428,50 @@ window.onload = () => {
     win!.document.close();
   };
 
+  const addToZugetUtil = async (
+  value: string,
+  endpoint: string,
+  paramName: string,
+  refreshEndpoint: string,
+  setter: Function,
+  label: string,
+  currentList: any[] // New parameter to check for duplicates
+) => {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return;
+
+  // 1. Duplicate Check: Case-insensitive comparison
+  const isDuplicate = currentList.some(
+    (item) => item.name?.toLowerCase() === trimmedValue.toLowerCase()
+  );
+
+  if (isDuplicate) {
+    alert(`${label} "${trimmedValue}" already exists.`);
+    return; // Stop the API call
+  }
+
+  try {
+    const res = await fetch(
+      `${API_BASE}${endpoint}?${paramName}=${encodeURIComponent(trimmedValue)}`,
+      {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          Authorization: authtoken,
+        },
+      }
+    );
+
+    const result = await res.json();
+
+    if (result.status === "success" || res.ok) {
+      fetchData(refreshEndpoint, setter);
+      alert(`${label} added successfully`);
+    }
+  } catch (error) {
+    console.error(`Error adding ${label.toLowerCase()}:`, error);
+  }
+};
   /* -------- Rows, size config, helpers -------- */
 
   const defaultSize = { price: 0, quantity: 0 };
@@ -497,14 +492,14 @@ window.onload = () => {
     neck_type: "",
     sleeve_type: "",
     sizes: {
-      xs: { ...defaultSize },
-      s: { ...defaultSize },
-      m: { ...defaultSize },
-      l: { ...defaultSize },
-      xl: { ...defaultSize },
-      xxl: { ...defaultSize },
-      xxxl: { ...defaultSize },
-      xxxxl: { ...defaultSize },
+      xs: { price: 0, quantity: 0 },
+      s: { price: 0, quantity: 0 },
+      m: { price: 0, quantity: 0 },
+      l: { price: 0, quantity: 0 },
+      xl: { price: 0, quantity: 0 },
+      xxl: { price: 0, quantity: 0 },
+      xxxl: { price: 0, quantity: 0 },
+      xxxxl: { price: 0, quantity: 0 },
     },
     isSaved: false,
   });
@@ -513,77 +508,56 @@ window.onload = () => {
   const [fits, setFits] = useState<any[]>([]);
   const [rows, setRows] = useState<ProductRow[]>([createEmptyRow()]);
 
-  // local JSON lists via common hook
-  const { list: items, addValue: addItem } = useLocalList("items");
-  const { list: colorsList, addValue: addColor } = useLocalList("colors");
-  const { list: categoriesList, addValue: addCategory } =
-    useLocalList("categories");
-  const { list: sleevesList, addValue: addSleeve } =
-    useLocalList("sleevetypes");
-  const { list: necksList, addValue: addNeck } = useLocalList("necktypes");
+
 
   // Zuget brands
-  const [brandsList, setBrandsList] = useState<string[]>([]);
+  const [brandsList, setBrandsList] = useState<any[]>([]);
 
-  const genders = ["Mens", "Womens", "Girls","Boys", "Unisex"];
+  const genders = ["Mens", "Womens", "Girls", "Boys", "Unisex"];
+  const fetchBrands = async () => {
+    const storeId = localStorage.getItem("store_id");
 
-  useEffect(() => {
-    // fits & patterns from Zuget
-    fetchData("/util/fit-categories", setFits);
-    fetchData("/util/patterns", setPatterns);
-
-    // brands from Zuget
-    const fetchBrands = async () => {
-      const storeId = localStorage.getItem("store_id");
-
-      const res = await fetch(
-        `${API_BASE}/util/store-brands?store_id=${storeId}`,
-        {
-          headers: {
-            accept: "application/json",
-            Authorization: authtoken,
-          },
-        }
-      );
-
-      const json = await res.json();
-
-      if (json.status === "success") {
-        const brandNames = json.data.map((b: any) => b.name);
-        setBrandsList(brandNames);
+    const res = await fetch(
+      `${API_BASE}/util/store-brands?store_id=${storeId}`,
+      {
+        headers: {
+          accept: "application/json",
+          Authorization: authtoken,
+        },
       }
-    };
+    );
 
-    fetchBrands();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const json = await res.json();
 
-  const addPattern = async (value: string) => {
-    const patternName = value.trim();
-    if (!patternName) return;
-
-    try {
-      const res = await fetch(
-        `${API_BASE}/util/add-pattern?pattern=${encodeURIComponent(
-          patternName
-        )}`,
-        {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: authtoken,
-          },
-        }
-      );
-
-      const result = await res.json();
-      if (result.status === "success" || res.ok) {
-        fetchData("/util/patterns", setPatterns);
-        alert("Pattern added successfully");
-      }
-    } catch (error) {
-      console.error("Error adding pattern:", error);
+    if (json.status === "success") {
+      const brandNames = json.data.results
+      setBrandsList(brandNames);
+      console.log(brandNames, "brandNames");
     }
   };
+
+
+  // Replace the useLocalList hooks for these three:
+  const [itemsList, setItemsList] = useState<any[]>([]);
+  const [sleevesList, setSleevesList] = useState<any[]>([]);
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  const [necksList, setNecksList] = useState<any[]>([]);
+  const [colorsList, setColorsList] = useState<any[]>([]);
+  // Inside your useEffect (where you fetch fits and patterns):
+  useEffect(() => {
+    fetchData("/util/fit-categories", setFits);
+    fetchData("/util/patterns", setPatterns);
+    fetchData("/util/color", setColorsList);
+    fetchData("/util/category-details", setCategoriesList);
+    // New Zuget API fetches
+    fetchData("/util/item_name_list", setItemsList);
+    fetchData("/util/sleeve-type", setSleevesList);
+    fetchData("/util/neck_type", setNecksList);
+    fetchBrands()
+    // ... rest of your brand fetching logic
+  }, []);
+
+
 
   const addBrand = async (value: string) => {
     const brand = value.trim();
@@ -625,32 +599,7 @@ window.onload = () => {
     }
   };
 
-  const addFit = async (value: string) => {
-    const fitName = value.trim();
-    if (!fitName) return;
 
-    try {
-      const res = await fetch(
-        `${API_BASE}/util/add-fit?fit=${encodeURIComponent(fitName)}`,
-        {
-          method: "GET",
-          headers: {
-            accept: "application/json",
-            Authorization: authtoken,
-          },
-        }
-      );
-
-      const result = await res.json();
-
-      if (result.status === "success" || res.ok) {
-        fetchData("/util/fit-categories", setFits);
-        alert("Fit added successfully");
-      }
-    } catch (error) {
-      console.error("Error adding fit:", error);
-    }
-  };
 
   const fetchData = async (endpoint: string, setter: Function) => {
     const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -661,6 +610,8 @@ window.onload = () => {
     });
 
     const json = await res.json();
+    console.log(json, "json in fetch");
+
     setter(json?.data?.results || []);
   };
 
@@ -674,19 +625,17 @@ window.onload = () => {
     setRows(updated);
   };
 
-  const updatePrice = (index: number, size: keyof Sizes, value: number) => {
-    const updated = [...rows];
-    const safe = Number.isFinite(value) && value > 0 ? value : 0;
-    updated[index].sizes[size].price = safe;
-    setRows(updated);
-  };
+  const updatePrice = (index: number, size: keyof Sizes, value: any) => {
+  const updated = [...rows];
+  updated[index].sizes[size].price = value === "" ? 0 : Number(value);
+  setRows(updated);
+};
 
-  const updateQty = (index: number, size: keyof Sizes, value: number) => {
-    const updated = [...rows];
-    const safe = Number.isFinite(value) && value > 0 ? value : 0;
-    updated[index].sizes[size].quantity = safe;
-    setRows(updated);
-  };
+const updateQty = (index: number, size: keyof Sizes, value: any) => {
+  const updated = [...rows];
+  updated[index].sizes[size].quantity = value === "" ? 0 : Number(value);
+  setRows(updated);
+};
 
   const uploadToS3 = async (file: File): Promise<string> => {
     const formdata = new FormData();
@@ -706,45 +655,69 @@ window.onload = () => {
     return result?.data?.image_link;
   };
 
-  const saveRow = async (index: number) => {
-    const row = rows[index];
+const saveRow = async (index: number) => {
+  const row = rows[index];
 
-    let imageUrl = "";
-    let videoUrl = "";
+  // 1. Mandatory Fields Validation (excluding price and quantity)
+  const requiredFields = [
+    { value: row.item, label: "Item Name" },
+    { value: row.brand, label: "Brand" },
+    { value: row.category, label: "Category" },
+    { value: row.gender, label: "Gender" },
+    { value: row.color, label: "Color" },
+    { value: row.fit, label: "Fit" },
+    { value: row.pattern, label: "Pattern" },
+    { value: row.neck_type, label: "Neck Type" },
+    { value: row.sleeve_type, label: "Sleeve Type" },
+  ];
 
-    if (row.frontImage) imageUrl = await uploadToS3(row.frontImage);
-    if (row.backImage) videoUrl = await uploadToS3(row.backImage);
+  const missingFields = requiredFields
+    .filter((f) => !f.value || f.value.trim() === "" || f.value === "Select")
+    .map((f) => f.label);
 
-    const size_data = Object.entries(row.sizes)
-      .filter(([_, v]) => v.quantity > 0)
-      .map(([key, v]) => {
-        const finalSizeLabel = getDisplaySize(row, key);
-        return {
-          size: finalSizeLabel,
-          price: v.price,
-          quantity: v.quantity,
-        };
-      });
+  if (missingFields.length > 0) {
+    alert(`Please fill all required fields: ${missingFields.join(", ")}`);
+    return; // Stop execution if fields are missing
+  }
 
-    const body = {
-      app_user_id: Number(localStorage.getItem("app_user_id")),
-      store_id: Number(localStorage.getItem("store_id")),
-      barcode: row.barcode,
-      brand: row.brand,
-      item_name: row.item,
-      category: row.category,
-      gender: row.gender,
-      item_image: imageUrl,
-      item_video: videoUrl,
-      fit: row.fit,
-      color: row.color,
-      pattern: row.pattern,
-      neck_type: row.neck_type,
-      sleeve_type: row.sleeve_type,
-      size_data,
-      product_description: row.description,
+  // 2. Image Uploads
+  let imageUrl = "";
+  let videoUrl = "";
+
+  if (row.frontImage) imageUrl = await uploadToS3(row.frontImage);
+  if (row.backImage) videoUrl = await uploadToS3(row.backImage);
+
+  // 3. Map ALL sizes (Ensure price/qty are 0 if empty)
+  // This uses the 'sizes' array defined as ["xs", "s", "m", ... "xxxxl"]
+  const size_data = sizes.map((key) => {
+    const v = row.sizes[key as keyof Sizes];
+    return {
+      size: getDisplaySize(row, key),
+      price: Number(v.price) || 0,
+      quantity: Number(v.quantity) || 0,
     };
+  });
 
+  const body = {
+    app_user_id: Number(localStorage.getItem("app_user_id")),
+    store_id: Number(localStorage.getItem("store_id")),
+    barcode: row.barcode,
+    brand: row.brand,
+    item_name: row.item,
+    category: row.category,
+    gender: row.gender,
+    item_image: imageUrl,
+    item_video: videoUrl,
+    fit: row.fit,
+    color: row.color,
+    pattern: row.pattern,
+    neck_type: row.neck_type,
+    sleeve_type: row.sleeve_type,
+    size_data,
+    product_description: row.description,
+  };
+
+  try {
     const res = await fetch(`${API_BASE}/admin/add-product`, {
       method: "POST",
       headers: {
@@ -761,14 +734,19 @@ window.onload = () => {
       updated[index].barcode = result.data;
       updated[index].isSaved = true;
       setRows(updated);
-
-      const itemId = result.data.split("-")[1];
+      const barcodeParts = result.data.split("-");
+    const itemId = parseInt(barcodeParts[1], 10);
+      // const itemId = Number(result.data.split("-")[1]);
       setBarcodes((prev) => [...prev, itemId]);
 
       alert("Saved Successfully");
       addRow();
     }
-  };
+  } catch (error) {
+    console.error("Save error:", error);
+    alert("An error occurred while saving.");
+  }
+};
 
   const sizes = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl"];
 
@@ -828,14 +806,15 @@ window.onload = () => {
 
   const saveItems = async () => {
     if (barcodes.length === 0) {
-      alert("No items to save");
-      return;
-    }
+    alert("No items to save");
+    return;
+  }
+  const integerItemIds = barcodes.map(id => Math.floor(Number(id)));
 
     const body = {
       app_user_id: Number(localStorage.getItem("app_user_id")),
       store_id: Number(localStorage.getItem("store_id")),
-      item_ids: barcodes,
+      item_ids: integerItemIds,
     };
 
     try {
@@ -853,6 +832,7 @@ window.onload = () => {
 
       if (result.status === "success") {
         alert("Items saved successfully");
+        setBarcodes([])
       } else {
         alert("Failed to save items");
       }
@@ -870,9 +850,8 @@ window.onload = () => {
           onClick={() => {
             setPrevAddedItems(false);
           }}
-          className={`${
-            prevAddedItems === false ? "border-b-2 border-purple-500" : ""
-          } `}
+          className={`${prevAddedItems === false ? "border-b-2 border-purple-500" : ""
+            } `}
         >
           Add New Items
         </button>
@@ -880,9 +859,8 @@ window.onload = () => {
           onClick={() => {
             setPrevAddedItems(true);
           }}
-          className={`${
-            prevAddedItems === true ? "border-b-2 border-purple-500 capitalize" : "capitalize"
-          } `}
+          className={`${prevAddedItems === true ? "border-b-2 border-purple-500 capitalize" : "capitalize"
+            } `}
         >
           previously added Items test
         </button>
@@ -925,9 +903,8 @@ window.onload = () => {
                 {rows.map((row, i) => (
                   <tr
                     key={row.id}
-                    className={`border-t ${
-                      row.isSaved ? "bg-green-50" : ""
-                    }`}
+                    className={`border-t ${row.isSaved ? "bg-green-50" : ""
+                      }`}
                   >
                     {/* Item name with datalist + add */}
                     <td className="px-4">
@@ -956,20 +933,15 @@ window.onload = () => {
                             }
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                addItem(e.currentTarget.value);
-                                e.currentTarget.value = "";
-                                e.preventDefault();
+                                addToZugetUtil(e.currentTarget.value, "/util/add-item-list", "item_name", "/util/item_name_list", setItemsList, "Item",itemsList);
                               }
                             }}
                           />
 
                           <button
                             onClick={(e) => {
-                              const input =
-                                e.currentTarget
-                                  .previousSibling as HTMLInputElement;
-                              addItem(input.value);
-                              input.value = "";
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addToZugetUtil(input.value, "/util/add-item-list", "item_name", "/util/item_name_list", setItemsList, "Item",itemsList);
                             }}
                             style={{
                               border: "none",
@@ -987,8 +959,8 @@ window.onload = () => {
                         </div>
 
                         <datalist id={`items-list-${i}`}>
-                          {items.map((v) => (
-                            <option key={v} value={v} />
+                          {itemsList.map((v) => (
+                            <option key={v} value={v.name} />
                           ))}
                         </datalist>
                       </div>
@@ -1049,7 +1021,7 @@ window.onload = () => {
 
                         <datalist id={`brands-list-${i}`}>
                           {brandsList.map((b) => (
-                            <option key={b} value={b} />
+                            <option key={b._id} value={b.name} />
                           ))}
                         </datalist>
                       </div>
@@ -1082,17 +1054,15 @@ window.onload = () => {
                             value={row.category}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                addCategory(e.currentTarget.value);
+                                addToZugetUtil(e.currentTarget.value, "/util/add-item-categories", "category", "/util/category-details", setCategoriesList, "category",categoriesList);
                               }
                             }}
                           />
 
                           <button
                             onClick={(e) => {
-                              const input =
-                                e.currentTarget
-                                  .previousSibling as HTMLInputElement;
-                              addCategory(input.value);
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addToZugetUtil(input.value,"/util/add-item-categories", "category", "/util/category-details", setCategoriesList, "category",categoriesList);
                             }}
                             style={{
                               border: "none",
@@ -1107,10 +1077,10 @@ window.onload = () => {
                             +
                           </button>
                         </div>
-
+                            {/* {console.log(categoriesList,"categoriesList")} */}
                         <datalist id={`categories-list-${i}`}>
                           {categoriesList.map((cat) => (
-                            <option key={cat} value={cat} />
+                            <option key={cat._id} value={cat.name} />
                           ))}
                         </datalist>
                       </div>
@@ -1161,16 +1131,16 @@ window.onload = () => {
                             value={row.color}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                addColor(e.currentTarget.value);
+                                addToZugetUtil(e.currentTarget.value, "/util/add-color", "color", "/util/color", setColorsList, "Color",colorsList
+                                );
                               }
                             }}
                           />
                           <button
                             onClick={(e) => {
-                              const input =
-                                e.currentTarget
-                                  .previousSibling as HTMLInputElement;
-                              addColor(input.value);
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addToZugetUtil(input.value, "/util/add-color", "color", "/util/color", setColorsList, "Color",colorsList
+                              );
                             }}
                             style={{
                               border: "none",
@@ -1186,7 +1156,7 @@ window.onload = () => {
                         </div>
                         <datalist id={`colors-list-${i}`}>
                           {colorsList.map((c) => (
-                            <option key={c} value={c} />
+                            <option key={c._id} value={c.name} />
                           ))}
                         </datalist>
                       </div>
@@ -1220,17 +1190,15 @@ window.onload = () => {
                             value={row.fit}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                addFit(e.currentTarget.value);
+                                addToZugetUtil(e.currentTarget.value, "/util/add-fit", "fit", "/util/fit-categories", setFits, "Fit",fits);
                               }
                             }}
                           />
 
                           <button
                             onClick={(e) => {
-                              const input =
-                                e.currentTarget
-                                  .previousSibling as HTMLInputElement;
-                              addFit(input.value);
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addToZugetUtil(input.value, "/util/add-fit", "fit", "/util/fit-categories", setFits, "Fit",fits);
                             }}
                             style={{
                               border: "none",
@@ -1283,18 +1251,17 @@ window.onload = () => {
                               updateField(i, "sleeve_type", e.target.value)
                             }
                             value={row.sleeve_type}
-                            onKeyDown={(e) =>
-                              e.key === "Enter" &&
-                              addSleeve(e.currentTarget.value)
-                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                addToZugetUtil(e.currentTarget.value, "/util/add-sleeve-type", "sleeve_type", "/util/sleeve-type", setSleevesList, "Sleeve",sleevesList);
+                              }
+                            }}
                           />
                           <button
-                            onClick={(e) =>
-                              addSleeve(
-                                (e.currentTarget
-                                  .previousSibling as HTMLInputElement).value
-                              )
-                            }
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addToZugetUtil(input.value, "/util/add-sleeve-type", "sleeve_type", "/util/sleeve-type", setSleevesList, "Sleeve",sleevesList);
+                            }}
                             style={{
                               border: "none",
                               background: "purple",
@@ -1310,7 +1277,7 @@ window.onload = () => {
                         </div>
                         <datalist id={`sleeves-list-${i}`}>
                           {sleevesList.map((s) => (
-                            <option key={s} value={s} />
+                            <option key={s._id} value={s.name} />
                           ))}
                         </datalist>
                       </div>
@@ -1341,18 +1308,17 @@ window.onload = () => {
                               updateField(i, "neck_type", e.target.value)
                             }
                             value={row.neck_type}
-                            onKeyDown={(e) =>
-                              e.key === "Enter" &&
-                              addNeck(e.currentTarget.value)
-                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                addToZugetUtil(e.currentTarget.value, "/util/add-neck_type", "neck_type", "/util/neck_type", setNecksList, "Neck",necksList);
+                              }
+                            }}
                           />
                           <button
-                            onClick={(e) =>
-                              addNeck(
-                                (e.currentTarget
-                                  .previousSibling as HTMLInputElement).value
-                              )
-                            }
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addToZugetUtil(input.value, "/util/add-neck_type", "neck_type", "/util/neck_type", setNecksList, "Neck",necksList);
+                            }}
                             style={{
                               border: "none",
                               background: "purple",
@@ -1368,7 +1334,7 @@ window.onload = () => {
                         </div>
                         <datalist id={`necks-list-${i}`}>
                           {necksList.map((n) => (
-                            <option key={n} value={n} />
+                            <option key={n._id} value={n.name} />
                           ))}
                         </datalist>
                       </div>
@@ -1401,17 +1367,15 @@ window.onload = () => {
                             value={row.pattern}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                addPattern(e.currentTarget.value);
+                                addToZugetUtil(e.currentTarget.value, "/util/add-pattern", "pattern", "/util/patterns", setPatterns, "Pattern",patterns);
                               }
                             }}
                           />
 
                           <button
                             onClick={(e) => {
-                              const input =
-                                e.currentTarget
-                                  .previousSibling as HTMLInputElement;
-                              addPattern(input.value);
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addToZugetUtil(input.value, "/util/add-pattern", "pattern", "/util/patterns", setPatterns, "Pattern",patterns);
                             }}
                             style={{
                               border: "none",
@@ -1506,7 +1470,7 @@ window.onload = () => {
                               placeholder="Price"
                               className="w-20 border p-1 text-xs"
                               value={
-                                row.sizes[size as keyof Sizes].price || ""
+                                row.sizes[size as keyof Sizes].price || 0
                               }
                               onChange={(e) =>
                                 updatePrice(
@@ -1528,7 +1492,7 @@ window.onload = () => {
                               placeholder="Qty"
                               className="w-16 border p-1 text-xs"
                               value={
-                                row.sizes[size as keyof Sizes].quantity || ""
+                                row.sizes[size as keyof Sizes].quantity || 0
                               }
                               onChange={(e) =>
                                 updateQty(
@@ -1561,11 +1525,10 @@ window.onload = () => {
                       <button
                         disabled={!!row.isSaved}
                         onClick={() => saveRow(i)}
-                        className={`text-green-600 ${
-                          row.isSaved
-                            ? "opacity-40 cursor-not-allowed"
-                            : ""
-                        }`}
+                        className={`text-green-600 ${row.isSaved
+                          ? "opacity-40 cursor-not-allowed"
+                          : ""
+                          }`}
                       >
                         Save
                       </button>
