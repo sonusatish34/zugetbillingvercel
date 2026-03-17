@@ -435,7 +435,7 @@ export default function ProductTable() {
 <div class="label-container">
   <div class="portrait-wrapper">
     <div style="display: flex; flex-direction: column;">
-      <div class="store_name">${storeName}</div>
+      <div class="store_name">The Edit Luxury Club</div>
       <div class="barcode-section">
         <svg class="barcode-svg" data-value="${row.barcode}-${size}" id="${uniqueId}"></svg>
         <div class="barcode-number">${row.barcode}-${size}</div>
