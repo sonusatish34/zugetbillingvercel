@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
+import heic2any from "heic2any"; // Add this to your imports
 import React from "react";
 import { log } from "util";
 import { FaSave, FaClone, FaPrint } from "react-icons/fa";
@@ -210,25 +211,61 @@ export default function ProductTable() {
 
   /* -------- Image previews -------- */
 
-  const handleImageChange = (
-    index: number,
-    field: "frontImage" | "backImage",
-    file: File | undefined
-  ) => {
-    if (!file) return;
+ const handleImageChange = async (
+  index: number,
+  field: "frontImage" | "backImage",
+  file: File | undefined
+) => {
+  if (!file) return;
 
-    updateField(index, field, file);
+  let fileToSaveAndPreview: File | Blob = file;
 
-    const url = URL.createObjectURL(file);
+  // Check if the file is HEIC
+  if (
+    file.type === "image/heic" ||
+    file.name.toLowerCase().endsWith(".heic")
+  ) {
+    try {
+      // Convert HEIC to JPEG
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: "image/jpeg",
+        quality: 0.8, // Optional: compress slightly to save memory
+      });
 
-    setPreviews((prev) => ({
-      ...prev,
-      [rows[index].id]: {
-        ...prev[rows[index].id],
-        [field === "frontImage" ? "front" : "back"]: url,
-      },
-    }));
-  };
+      // heic2any can return an array of blobs if the image is an animation/sequence. 
+      // We just grab the first one.
+      fileToSaveAndPreview = Array.isArray(convertedBlob)
+        ? convertedBlob[0]
+        : convertedBlob;
+
+      // Convert the Blob back to a File object so it plays nice with your S3 upload
+      fileToSaveAndPreview = new File(
+        [fileToSaveAndPreview],
+        file.name.replace(/\.heic$/i, ".jpg"),
+        { type: "image/jpeg" }
+      );
+    } catch (error) {
+      console.error("Error converting HEIC image:", error);
+      alert("Could not process HEIC image. Please try a different format.");
+      return;
+    }
+  }
+
+  // Update your state with the file (either the original or the converted JPEG)
+  updateField(index, field, fileToSaveAndPreview);
+
+  // Generate the preview URL from the web-friendly file
+  const url = URL.createObjectURL(fileToSaveAndPreview);
+
+  setPreviews((prev) => ({
+    ...prev,
+    [rows[index].id]: {
+      ...prev[rows[index].id],
+      [field === "frontImage" ? "front" : "back"]: url,
+    },
+  }));
+};
 
   /* -------- Duplicate row -------- */
 
