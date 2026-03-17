@@ -316,21 +316,21 @@ export default function ProductTable() {
     }
 
     .barcode-section {
-      margin-top: 10px;
-  width: 100%;
-  padding: 0 5px; /* Adds a small buffer so bars don't touch the edge */
-  box-sizing: border-box;
   background: #fff;
-    }
+}
 
     .barcode-svg {
-      width: 100%;    /* Force it to fill the section width */
-  height: 60px;   /* Explicitly match the height in your JsBarcode config */
-  display: block;
+    max-width: 100%;
+    height: 60px; /* Increased height helps the scanner find the line faster */
+    display: block;
+  
+  /* The most important lines for barcode clarity: */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
   shape-rendering: crispEdges;
-    }
+}
 
-    .barcode-number { font-size: 12px; font-weight: 800; letter-spacing: 1px; }
+    .barcode-number { font-size: 12px; font-weight: 800; }
    
     .brand {
     padding-top:10px;
@@ -408,12 +408,12 @@ export default function ProductTable() {
     document.querySelectorAll('.barcode-svg').forEach(el => {
       JsBarcode(el, el.getAttribute('data-value'), {
         format: "CODE128",
-  width: 1.8,       // Increased from 1.3 for thicker, clearer bars
-  height: 60,      // Increased from 35 to give the scanner more vertical "target"
-  displayValue: false,
-  margin: 0,
-  background: "#ffffff", // Ensure a clean white background
-  lineColor: "#000000"   // High contrast black
+        width: 2,       // Use a whole number (2) for much sharper lines
+        height: 60,      // Taller barcodes scan significantly faster
+        displayValue: false,
+        margin: 10,      // Adds a "Quiet Zone" so the scanner knows where the code starts
+        background: "#ffffff",
+        lineColor: "#000000"
       });
     });
 
