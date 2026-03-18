@@ -736,10 +736,11 @@ export default function ProductTable() {
   };
 
   const updateQty = (index: number, size: keyof Sizes, value: any) => {
-    const updated = [...rows];
-    updated[index].sizes[size].quantity = value === "" ? 0 : Number(value);
-    setRows(updated);
-  };
+  const updated = [...rows];
+  // Convert to number here so your state remains consistent for the API
+  updated[index].sizes[size].quantity = value === "" ? 0 : Number(value);
+  setRows(updated);
+};
 
   const uploadToS3 = async (file: File): Promise<string> => {
     const formdata = new FormData();
@@ -840,8 +841,8 @@ export default function ProductTable() {
         const isXs = key === 'xs';
         return {
           size: getDisplaySize(row, key),
-    price: isXs ? 0 : (Number(v.price) || 0),
-    quantity: isXs ? 0 : (Number(v.quantity) || 0),
+          price: isXs ? 0 : (Number(v.price) || 0),
+          quantity: isXs ? 0 : (Number(v.quantity) || 0),
         };
       });
 
@@ -994,50 +995,53 @@ export default function ProductTable() {
     } catch (error) {
       console.error(error);
     }
+    finally{
+      fetchLists()
+    }
   };
 
   const handleDelete = async (barcode: string) => {
-  // 1. Extract the Item ID (e.g., "24214528-536" -> "536")
-  const parts = barcode.split("-");
-  const itemId = parts[1]; 
+    // 1. Extract the Item ID (e.g., "24214528-536" -> "536")
+    const parts = barcode.split("-");
+    const itemId = parts[1];
 
-  if (!itemId) {
-    alert("Invalid Barcode format. Cannot find Item ID.");
-    return;
-  }
-
-  if (!window.confirm("Are you sure you want to delete this item?")) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/admin/delete-product?item_id=${itemId}`, {
-      method: "DELETE",
-      headers: {
-        "accept": "application/json",
-        "Authorization": authtoken,
-      },
-    });
-
-    const result = await res.json();
-    
-    if (result.status === "success") {
-      alert("Item deleted successfully!");
-
-      // FIX: Update BOTH possible states to ensure it disappears from the UI
-      
-      // If deleting from the "Previously Added Items" list:
-      setListItems((prev) => prev.filter((item) => String(item.barcode) !== String(barcode)));
-
-      // If deleting from the "Main Entry Table" rows:
-      setRows((prev) => prev.filter((row) => row.barcode !== barcode));
-      
-    } else {
-      alert(result.message || "Failed to delete item.");
+    if (!itemId) {
+      alert("Invalid Barcode format. Cannot find Item ID.");
+      return;
     }
-  } catch (error) {
-    console.error("Delete error:", error);
-    alert("Error connecting to server.");
-  }
-};
+
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/delete-product?item_id=${itemId}`, {
+        method: "DELETE",
+        headers: {
+          "accept": "application/json",
+          "Authorization": authtoken,
+        },
+      });
+
+      const result = await res.json();
+
+      if (result.status === "success") {
+        alert("Item deleted successfully!");
+
+        // FIX: Update BOTH possible states to ensure it disappears from the UI
+
+        // If deleting from the "Previously Added Items" list:
+        setListItems((prev) => prev.filter((item) => String(item.barcode) !== String(barcode)));
+
+        // If deleting from the "Main Entry Table" rows:
+        setRows((prev) => prev.filter((row) => row.barcode !== barcode));
+
+      } else {
+        alert(result.message || "Failed to delete item.");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Error connecting to server.");
+    }
+  };
 
   /* ---------------- RENDER ---------------- */
 
@@ -1094,7 +1098,7 @@ export default function ProductTable() {
 
                   <th>Barcode</th>
                   <th>Actions</th>
-                  
+
                 </tr>
               </thead>
 
@@ -1676,78 +1680,68 @@ export default function ProductTable() {
                       </div>
                     </td>
                     {/* Add this inside rows.map((row, i) => ( <tr ...> */}
-                    <td className="px-2 bg-purple-50">
+                    {/* Bulk Price Input */}
+                    <td className="bg-purple-100 p-2">
                       <input
-                        type="number"
-                        placeholder="Set all prices"
-                        className="w-20 border-2 border-purple-300 p-1 text-xs rounded"
+                        type="text"
+                        placeholder="Bulk Price"
+                        className="w-20 p-1 text-black rounded border"
                         onChange={(e) => {
-                          const val = Number(e.target.value);
-                          updateField(i, "bulkPriceTemp", val); // Optional: track temp value
-                          applyBulkPrice(i, val);
+                          const val = e.target.value.replace(/[^0-9]/g, ""); // Allow only digits
+                          applyBulkPrice(i, Number(val));
                         }}
                       />
                     </td>
-                    <td className="px-2 bg-purple-50 border-r-2 border-purple-200">
+
+                    {/* Bulk Qty Input */}
+                    <td className="bg-purple-100 p-2">
                       <input
-                        type="number"
-                        placeholder="Set all qty"
-                        className="w-16 border-2 border-purple-300 p-1 text-xs rounded"
+                        type="text"
+                        placeholder="Bulk Qty"
+                        className="w-20 p-1 text-black rounded border"
                         onChange={(e) => {
-                          const val = Number(e.target.value);
-                          applyBulkQty(i, val);
+                          const val = e.target.value.replace(/[^0-9]/g, ""); // Allow only digits
+                          applyBulkQty(i, Number(val));
                         }}
                       />
                     </td>
 
                     {/* Sizes (price + qty) */}
-                   {/* Inside <tbody> rows.map */}
-{sizes.filter(size => size !== 'xs').map((size) => {
-  const displayLabel = getDisplaySize(row, size);
-  return (
-    <React.Fragment key={size + i}>
-      <td className="px-2 border-l">
-        <div className="text-[10px] font-bold text-purple-600 mb-1">
-          {displayLabel}
-        </div>
-        <input
-          disabled={!!row.isSaved}
-          type="text"
-          inputMode="numeric"
-          placeholder="Price"
-          className="w-20 border p-1 text-xs"
-          value={row.sizes[size as keyof Sizes].price ?? "0"}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (/^\d*$/.test(value)) {
-              updatePrice(i, size as keyof Sizes, Number(value || 0));
-            }
-          }}
-        />
-      </td>
-
-      <td className="px-2 bg-gray-50">
-        <div className="text-[10px] font-bold text-gray-400 mb-1">
-          QTY
-        </div>
-        <input
-          disabled={!!row.isSaved}
-          type="number"
-          placeholder="Qty"
-          className="w-16 border p-1 text-xs"
-          value={row.sizes[size as keyof Sizes].quantity || 0}
-          onChange={(e) =>
-            updateQty(
-              i,
-              size as keyof Sizes,
-              Number(e.target.value || 0)
-            )
-          }
-        />
-      </td>
-    </React.Fragment>
-  );
-})}
+                    {/* Inside <tbody> rows.map */}
+                   {/* Filter out 'xs' from the row rendering */}
+{sizes.filter(size => size !== 'xs').map((size) => (
+  <React.Fragment key={size}>
+    {/* Price Input */}
+    <td className="p-1 border">
+      <input
+        type="text"
+        inputMode="numeric"
+        className="w-16 border rounded p-1 text-center"
+        value={row.sizes[size as keyof Sizes].price || ""}
+        onChange={(e) => {
+          const val = e.target.value.replace(/[^0-9]/g, "");
+          updatePrice(i, size as keyof Sizes, val);
+        }}
+        disabled={!!row.isSaved}
+      />
+    </td>
+    
+    {/* Quantity Input - Arrows Removed */}
+    <td className="p-1 border">
+      <input
+        type="text"
+        inputMode="numeric" 
+        className="w-12 border rounded p-1 text-center"
+        value={row.sizes[size as keyof Sizes].quantity || ""}
+        onChange={(e) => {
+          const val = e.target.value.replace(/[^0-9]/g, "");
+          updateQty(i, size as keyof Sizes, val);
+        }}
+        disabled={!!row.isSaved}
+      />
+    </td>
+  </React.Fragment>
+))}
 
                     {/* Description */}
                     {/* <td className="px-4">
@@ -1776,28 +1770,28 @@ export default function ProductTable() {
                           <FaSave size={30} />
                         )}
                       </button>
-                    
 
-                    {/* Clone */}
-                    
+
+                      {/* Clone */}
+
                       <button
                         onClick={() => duplicateRow(row, i)}
                         className="text-blue-600 text-lg cursor-pointer"
                       >
                         <FaClone size={30} />
                       </button>
-                   
 
-                    {/* Print */}
-                    
+
+                      {/* Print */}
+
                       <button
                         onClick={() => printLabels(row)}
                         className="text-purple-600 text-lg cursor-pointer"
                       >
-                        <FaPrint size={30}/>
+                        <FaPrint size={30} />
                       </button>
-                    
-                    
+
+
                       {/* --- DELETE BUTTON --- */}
                       <button
                         onClick={() => handleDelete(row.barcode)}

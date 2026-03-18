@@ -12,44 +12,27 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Initialize theme immediately to prevent flash
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme') as Theme;
-      if (savedTheme) {
-        return savedTheme;
-      }
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        return 'dark';
-      }
+      return (localStorage.getItem('theme') as Theme) || 'light';
     }
     return 'light';
   });
 
   useEffect(() => {
-    // Apply theme class immediately
     const root = document.documentElement;
+
     if (theme === 'dark') {
-      root.classList.add('light');
+      root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
+
     localStorage.setItem('theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => {
-      const newTheme = prev === 'light' ? 'light' : 'light';
-      // Apply immediately
-      const root = document.documentElement;
-      if (newTheme === 'light') {
-        root.classList.add('light');
-      } else {
-        root.classList.remove(' ');
-      }
-      localStorage.setItem('theme', newTheme);
-      return newTheme;
-    });
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   return (

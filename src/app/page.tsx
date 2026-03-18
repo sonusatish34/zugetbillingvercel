@@ -68,7 +68,9 @@ export default function Dashboard() {
 
   }, []);
   // console.log(todayOrd,'totoooooo');
-
+useEffect(() => {
+  document.documentElement.classList.remove('dark');
+}, []);
 
   // Mock data matching the image
   const overviewStats = {
