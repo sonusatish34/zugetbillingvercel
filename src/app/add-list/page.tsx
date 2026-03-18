@@ -99,11 +99,13 @@ export default function ProductTable() {
   const [isSaving, setIsSaving] = useState<{ [key: number]: boolean }>({});
 
   useEffect(() => {
-    // Push current state
+    // Push state TWICE to create a buffer
+    window.history.pushState(null, "", window.location.href);
     window.history.pushState(null, "", window.location.href);
 
     const handlePopState = () => {
-      // Prevent going back
+      // Whenever they consume a history state by swiping back, 
+      // immediately push a new one to replace the buffer.
       window.history.pushState(null, "", window.location.href);
     };
 
@@ -113,8 +115,7 @@ export default function ProductTable() {
       window.removeEventListener("popstate", handlePopState);
     };
   }, []);
-  const [bulkPrice, setBulkPrice] = useState<number | "">("");
-  const [bulkQty, setBulkQty] = useState<number | "">("");
+
   const [prevAddedItems, setPrevAddedItems] = useState<Boolean>(false);
   const [previews, setPreviews] = useState<{
     [key: string]: { front?: string; back?: string };
@@ -151,7 +152,12 @@ export default function ProductTable() {
       setOpenListId(null);
       return;
     }
-
+    const printUrl = `/print-list?list_id=${listId}`;
+    window.open(printUrl, "_blank");
+    if (openListId === listId) {
+      setOpenListId(null);
+      return;
+    }
     const res = await fetch(
       `${API_BASE}/admin/list-items?list_id=${listId}`,
       {
@@ -211,61 +217,61 @@ export default function ProductTable() {
 
   /* -------- Image previews -------- */
 
- const handleImageChange = async (
-  index: number,
-  field: "frontImage" | "backImage",
-  file: File | undefined
-) => {
-  if (!file) return;
+  const handleImageChange = async (
+    index: number,
+    field: "frontImage" | "backImage",
+    file: File | undefined
+  ) => {
+    if (!file) return;
 
-  let fileToSaveAndPreview: File | Blob = file;
+    let fileToSaveAndPreview: File | Blob = file;
 
-  // Check if the file is HEIC
-  if (
-    file.type === "image/heic" ||
-    file.name.toLowerCase().endsWith(".heic")
-  ) {
-    try {
-      // Convert HEIC to JPEG
-      const convertedBlob = await heic2any({
-        blob: file,
-        toType: "image/jpeg",
-        quality: 0.8, // Optional: compress slightly to save memory
-      });
+    // Check if the file is HEIC
+    if (
+      file.type === "image/heic" ||
+      file.name.toLowerCase().endsWith(".heic")
+    ) {
+      try {
+        // Convert HEIC to JPEG
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.8, // Optional: compress slightly to save memory
+        });
 
-      // heic2any can return an array of blobs if the image is an animation/sequence. 
-      // We just grab the first one.
-      fileToSaveAndPreview = Array.isArray(convertedBlob)
-        ? convertedBlob[0]
-        : convertedBlob;
+        // heic2any can return an array of blobs if the image is an animation/sequence. 
+        // We just grab the first one.
+        fileToSaveAndPreview = Array.isArray(convertedBlob)
+          ? convertedBlob[0]
+          : convertedBlob;
 
-      // Convert the Blob back to a File object so it plays nice with your S3 upload
-      fileToSaveAndPreview = new File(
-        [fileToSaveAndPreview],
-        file.name.replace(/\.heic$/i, ".jpg"),
-        { type: "image/jpeg" }
-      );
-    } catch (error) {
-      console.error("Error converting HEIC image:", error);
-      alert("Could not process HEIC image. Please try a different format.");
-      return;
+        // Convert the Blob back to a File object so it plays nice with your S3 upload
+        fileToSaveAndPreview = new File(
+          [fileToSaveAndPreview],
+          file.name.replace(/\.heic$/i, ".jpg"),
+          { type: "image/jpeg" }
+        );
+      } catch (error) {
+        console.error("Error converting HEIC image:", error);
+        alert("Could not process HEIC image. Please try a different format.");
+        return;
+      }
     }
-  }
 
-  // Update your state with the file (either the original or the converted JPEG)
-  updateField(index, field, fileToSaveAndPreview);
+    // Update your state with the file (either the original or the converted JPEG)
+    updateField(index, field, fileToSaveAndPreview);
 
-  // Generate the preview URL from the web-friendly file
-  const url = URL.createObjectURL(fileToSaveAndPreview);
+    // Generate the preview URL from the web-friendly file
+    const url = URL.createObjectURL(fileToSaveAndPreview);
 
-  setPreviews((prev) => ({
-    ...prev,
-    [rows[index].id]: {
-      ...prev[rows[index].id],
-      [field === "frontImage" ? "front" : "back"]: url,
-    },
-  }));
-};
+    setPreviews((prev) => ({
+      ...prev,
+      [rows[index].id]: {
+        ...prev[rows[index].id],
+        [field === "frontImage" ? "front" : "back"]: url,
+      },
+    }));
+  };
 
   /* -------- Duplicate row -------- */
 
@@ -276,13 +282,13 @@ export default function ProductTable() {
       id: uuidv4(),
       item: row.item,
       brand: row.brand,
-      category: row.category,
+      category: "Mens Clothing",
       item_category: row.item_category,
       gender: row.gender,
       color: "",
       isSaved: false,
       fit: row.fit,
-      description: row.description,
+      description: "",
       pattern: row.pattern,
       neck_type: row.neck_type,
       sleeve_type: row.sleeve_type,
@@ -540,7 +546,7 @@ export default function ProductTable() {
     item: "",
     brand: "",
     category: "",
-    gender: "",
+    gender: "Mens",
     color: "",
     fit: "",
     description: "",
@@ -785,106 +791,116 @@ export default function ProductTable() {
     }
   };
   // 1. Updated saveRow function with proper loading and no success alert
-const saveRow = async (index: number) => {
-  const row = rows[index];
-  
-  // Validation remains (you may want to replace this alert with a toast later)
-  const requiredFields = [
-    { value: row.item, label: "Item Name" },
-    { value: row.brand, label: "Brand" },
-    { value: row.category, label: "Category" },
-    { value: row.gender, label: "Gender" },
-    { value: row.item_category, label: "Item Category" },
-    { value: row.color, label: "Color" },
-    { value: row.fit, label: "Fit" },
-    { value: row.pattern, label: "Pattern" },
-    { value: row.neck_type, label: "Neck Type" },
-    { value: row.sleeve_type, label: "Sleeve Type" },
-  ];
+  const saveRow = async (index: number) => {
+    const row = rows[index];
 
-  const missingFields = requiredFields
-    .filter((f) => !f.value || f.value.trim() === "" || f.value === "Select")
-    .map((f) => f.label);
+    // Validation remains (you may want to replace this alert with a toast later)
+    const requiredFields = [
+      { value: row.item, label: "Item Name" },
+      { value: row.brand, label: "Brand" },
+      // { value: row.category, label: "Category" },
+      // { value: row.gender, label: "Gender" },
+      { value: row.item_category, label: "Item Category" },
+      { value: row.color, label: "Color" },
+      { value: row.fit, label: "Fit" },
+      { value: row.pattern, label: "Pattern" },
+      { value: row.neck_type, label: "Neck Type" },
+      { value: row.sleeve_type, label: "Sleeve Type" },
+      // { value: row.description, label: "Description" },
+      { value: row.frontImage, label: "Front Image" },  // Added Front Image
+      { value: row.backImage, label: "Back Image" },
+    ];
 
-  if (missingFields.length > 0) {
-    alert(`Please fill all required fields: ${missingFields.join(", ")}`);
-    return;
-  }
+    const missingFields = requiredFields.filter((f) => {
+      if (!f.value) return true;
 
-  // START LOADER
-  setIsSaving((prev) => ({ ...prev, [index]: true }));
+      if (typeof f.value === "string") {
+        return f.value.trim() === "" || f.value === "Select";
+      }
+      return false;
+    }).map((f) => f.label);
 
-  try {
-    // Image Uploads
-    let imageUrl = "";
-    let videoUrl = "";
-    if (row.frontImage) imageUrl = await uploadToS3(row.frontImage);
-    if (row.backImage) videoUrl = await uploadToS3(row.backImage);
-
-    const size_data = sizes.map((key) => {
-      const v = row.sizes[key as keyof Sizes];
-      return {
-        size: getDisplaySize(row, key),
-        price: Number(v.price) || 0,
-        quantity: Number(v.quantity) || 0,
-      };
-    });
-
-    const body = {
-      app_user_id: Number(localStorage.getItem("app_user_id")),
-      store_id: Number(localStorage.getItem("store_id")),
-      barcode: row.barcode,
-      brand: row.brand,
-      item_name: row.item,
-      category: row.category,
-      gender: row.gender,
-      item_category: row.item_category,
-      item_image: imageUrl,
-      item_video: videoUrl,
-      fit: row.fit,
-      color: row.color,
-      pattern: row.pattern,
-      neck_type: row.neck_type,
-      sleeve_type: row.sleeve_type,
-      size_data,
-      product_description: row.description,
-    };
-
-    const res = await fetch(`${API_BASE}/admin/add-product`, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: authtoken,
-      },
-      body: JSON.stringify(body),
-    });
-
-    const result = await res.json();
-    
-    if (result.status === "success") {
-      const updated = [...rows];
-      updated[index].barcode = result.data;
-      updated[index].isSaved = true;
-      setRows(updated);
-      
-      const barcodeParts = result.data.split("-");
-      const itemId = parseInt(barcodeParts[1], 10);
-      setBarcodes((prev) => [...prev, itemId]);
-
-      // Removed Success Alert
-      addRow();
-    } else {
-      alert(result.message || "Failed to save product");
+    if (missingFields.length > 0) {
+      alert(`Please fill all required fields: ${missingFields.join(", ")}`);
+      return;
     }
-  } catch (error) {
-    console.error("Save error:", error);
-    alert("An error occurred while saving.");
-  } finally {
-    // STOP LOADER (Always runs whether success or error)
-    setIsSaving((prev) => ({ ...prev, [index]: false }));
-  }
-};
+
+    // START LOADER
+    setIsSaving((prev) => ({ ...prev, [index]: true }));
+
+    try {
+      // Image Uploads
+      let imageUrl = "";
+      let videoUrl = "";
+      if (row.frontImage) imageUrl = await uploadToS3(row.frontImage);
+      if (row.backImage) videoUrl = await uploadToS3(row.backImage);
+
+      const size_data = sizes.map((key) => {
+        const v = row.sizes[key as keyof Sizes];
+        const isXs = key === 'xs';
+        return {
+          size: getDisplaySize(row, key),
+    price: isXs ? 0 : (Number(v.price) || 0),
+    quantity: isXs ? 0 : (Number(v.quantity) || 0),
+        };
+      });
+
+      const body = {
+        app_user_id: Number(localStorage.getItem("app_user_id")),
+        store_id: Number(localStorage.getItem("store_id")),
+        barcode: row.barcode,
+        brand: row.brand,
+        item_name: row.item,
+        category: "Mens Clothing",
+        gender: "Mens",
+        item_category: row.item_category,
+        item_image: imageUrl,
+        item_video: videoUrl,
+        fit: row.fit,
+        color: row.color,
+        pattern: row.pattern,
+        neck_type: row.neck_type,
+        sleeve_type: row.sleeve_type,
+        size_data,
+        product_description: "dummy",
+      };
+
+      const res = await fetch(`${API_BASE}/admin/add-product`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: authtoken,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const result = await res.json();
+
+      if (result.status === "success") {
+        const updated = [...rows];
+        updated[index].barcode = result.data;
+        updated[index].isSaved = true;
+        setRows(updated);
+
+        const barcodeParts = result.data.split("-");
+        const itemId = parseInt(barcodeParts[1], 10);
+        setBarcodes((prev) => [...prev, itemId]);
+
+        // Removed Success Alert
+        addRow();
+      } else {
+        alert(result.message || "Failed to save product");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("An error occurred while saving.");
+    } finally {
+      // STOP LOADER (Always runs whether success or error)
+      setIsSaving((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
 
 
 
@@ -902,12 +918,11 @@ const saveRow = async (index: number) => {
       "5-6 Year",
     ],
     JEANS: ["28", "30", "32", "34", "36", "38", "40", "42"],
-    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL"],
+    SHIRTS: ["S", "M", "L", "XL", "XXL", "3XL", "4XL"],
   };
 
   const getDisplaySize = (row: ProductRow, sizeKey: string) => {
     const index = [
-      "xs",
       "s",
       "m",
       "l",
@@ -981,6 +996,49 @@ const saveRow = async (index: number) => {
     }
   };
 
+  const handleDelete = async (barcode: string) => {
+  // 1. Extract the Item ID (e.g., "24214528-536" -> "536")
+  const parts = barcode.split("-");
+  const itemId = parts[1]; 
+
+  if (!itemId) {
+    alert("Invalid Barcode format. Cannot find Item ID.");
+    return;
+  }
+
+  if (!window.confirm("Are you sure you want to delete this item?")) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/admin/delete-product?item_id=${itemId}`, {
+      method: "DELETE",
+      headers: {
+        "accept": "application/json",
+        "Authorization": authtoken,
+      },
+    });
+
+    const result = await res.json();
+    
+    if (result.status === "success") {
+      alert("Item deleted successfully!");
+
+      // FIX: Update BOTH possible states to ensure it disappears from the UI
+      
+      // If deleting from the "Previously Added Items" list:
+      setListItems((prev) => prev.filter((item) => String(item.barcode) !== String(barcode)));
+
+      // If deleting from the "Main Entry Table" rows:
+      setRows((prev) => prev.filter((row) => row.barcode !== barcode));
+      
+    } else {
+      alert(result.message || "Failed to delete item.");
+    }
+  } catch (error) {
+    console.error("Delete error:", error);
+    alert("Error connecting to server.");
+  }
+};
+
   /* ---------------- RENDER ---------------- */
 
   return (
@@ -1015,8 +1073,8 @@ const saveRow = async (index: number) => {
                   <th className="p-4">Item Name</th>
                   <th className="p-4">Item Categeory</th>
                   <th className="px-2">Brand</th>
-                  <th>Category</th>
-                  <th>Gender</th>
+                  {/* <th>Category</th> */}
+                  {/* <th>Gender</th> */}
                   <th>Color</th>
                   <th>Fit</th>
                   <th>sleeve</th>
@@ -1027,18 +1085,16 @@ const saveRow = async (index: number) => {
                   {/* Add this inside <thead> <tr> */}
                   <th className="bg-purple-100 p-2">Bulk Price</th>
                   <th className="bg-purple-100 p-2">Bulk Qty</th>
-                  {sizes.map((size) => (
+                  {sizes.filter(size => size !== 'xs').map((size) => (
                     <React.Fragment key={size}>
                       <th>{size.toUpperCase()} Price</th>
                       <th>{size.toUpperCase()} Qty</th>
                     </React.Fragment>
                   ))}
 
-                  <th>Description</th>
                   <th>Barcode</th>
-                  <th>Save</th>
-                  <th>Clone</th>
-                  <th>Print</th>
+                  <th>Actions</th>
+                  
                 </tr>
               </thead>
 
@@ -1207,7 +1263,7 @@ const saveRow = async (index: number) => {
                     </td>
 
                     {/* Category from local server */}
-                    <td className="px-4">
+                    {/* <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1256,31 +1312,18 @@ const saveRow = async (index: number) => {
                             +
                           </button>
                         </div>
-                        {/* {console.log(categoriesList,"categoriesList")} */}
                         <datalist id={`categories-list-${i}`}>
                           {categoriesList.map((cat) => (
                             <option key={cat._id} value={cat.name} />
                           ))}
                         </datalist>
                       </div>
-                    </td>
+                    </td> */}
 
                     {/* Gender select */}
-                    <td className="px-4">
-                      <select
-                        value={row.gender || "Select"}
-                        onChange={(e) =>
-                          updateField(i, "gender", e.target.value)
-                        }
-                      >
-                        <option value="Select">Select</option>
-                        {genders.map((v) => (
-                          <option key={v} value={v}>
-                            {v}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
+                    {/* <td className="px-4">
+                      Mens
+                    </td> */}
 
                     {/* Color from local server */}
                     <td className="px-4">
@@ -1658,73 +1701,69 @@ const saveRow = async (index: number) => {
                     </td>
 
                     {/* Sizes (price + qty) */}
-                    {sizes.map((size) => {
-                      const displayLabel = getDisplaySize(row, size);
+                   {/* Inside <tbody> rows.map */}
+{sizes.filter(size => size !== 'xs').map((size) => {
+  const displayLabel = getDisplaySize(row, size);
+  return (
+    <React.Fragment key={size + i}>
+      <td className="px-2 border-l">
+        <div className="text-[10px] font-bold text-purple-600 mb-1">
+          {displayLabel}
+        </div>
+        <input
+          disabled={!!row.isSaved}
+          type="text"
+          inputMode="numeric"
+          placeholder="Price"
+          className="w-20 border p-1 text-xs"
+          value={row.sizes[size as keyof Sizes].price ?? "0"}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (/^\d*$/.test(value)) {
+              updatePrice(i, size as keyof Sizes, Number(value || 0));
+            }
+          }}
+        />
+      </td>
 
-                      return (
-                        <React.Fragment key={size + i}>
-                          <td className="px-2 border-l">
-                            <div className="text-[10px] font-bold text-purple-600 mb-1">
-                              {displayLabel}
-                            </div>
-                            <input
-                              disabled={!!row.isSaved}
-                              type="number"
-                              placeholder="Price"
-                              className="w-20 border p-1 text-xs"
-                              value={
-                                row.sizes[size as keyof Sizes].price || 0
-                              }
-                              onChange={(e) =>
-                                updatePrice(
-                                  i,
-                                  size as keyof Sizes,
-                                  Number(e.target.value || 0)
-                                )
-                              }
-                            />
-                          </td>
-
-                          <td className="px-2 bg-gray-50">
-                            <div className="text-[10px] font-bold text-gray-400 mb-1">
-                              QTY
-                            </div>
-                            <input
-                              disabled={!!row.isSaved}
-                              type="number"
-                              placeholder="Qty"
-                              className="w-16 border p-1 text-xs"
-                              value={
-                                row.sizes[size as keyof Sizes].quantity || 0
-                              }
-                              onChange={(e) =>
-                                updateQty(
-                                  i,
-                                  size as keyof Sizes,
-                                  Number(e.target.value || 0)
-                                )
-                              }
-                            />
-                          </td>
-                        </React.Fragment>
-                      );
-                    })}
+      <td className="px-2 bg-gray-50">
+        <div className="text-[10px] font-bold text-gray-400 mb-1">
+          QTY
+        </div>
+        <input
+          disabled={!!row.isSaved}
+          type="number"
+          placeholder="Qty"
+          className="w-16 border p-1 text-xs"
+          value={row.sizes[size as keyof Sizes].quantity || 0}
+          onChange={(e) =>
+            updateQty(
+              i,
+              size as keyof Sizes,
+              Number(e.target.value || 0)
+            )
+          }
+        />
+      </td>
+    </React.Fragment>
+  );
+})}
 
                     {/* Description */}
-                    <td className="px-4">
+                    {/* <td className="px-4">
                       <textarea
                         className="border w-28"
                         onChange={(e) =>
                           updateField(i, "description", e.target.value)
                         }
                       />
-                    </td>
+                    </td> */}
 
                     {/* Barcode */}
                     <td className="text-xs">{row.barcode}</td>
 
                     {/* Save */}
-                    <td className="px-4 text-center">
+                    <td className="px-4  flex items-center justify-center py-2 gap-x-5">
                       <button
                         disabled={!!row.isSaved || isSaving[i]}
                         onClick={() => saveRow(i)}
@@ -1732,32 +1771,46 @@ const saveRow = async (index: number) => {
                           }`}
                       >
                         {isSaving[i] ? (
-                          <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full"></div>
+                          <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full cursor-pointer"></div>
                         ) : (
-                          <FaSave />
+                          <FaSave size={30} />
                         )}
                       </button>
-                    </td>
+                    
 
                     {/* Clone */}
-                    <td className="px-4">
+                    
                       <button
                         onClick={() => duplicateRow(row, i)}
-                        className="text-blue-600 text-lg"
+                        className="text-blue-600 text-lg cursor-pointer"
                       >
-                        <FaClone />
+                        <FaClone size={30} />
+                      </button>
+                   
+
+                    {/* Print */}
+                    
+                      <button
+                        onClick={() => printLabels(row)}
+                        className="text-purple-600 text-lg cursor-pointer"
+                      >
+                        <FaPrint size={30}/>
+                      </button>
+                    
+                    
+                      {/* --- DELETE BUTTON --- */}
+                      <button
+                        onClick={() => handleDelete(row.barcode)}
+                        className="text-red-500 hover:text-red-700 transition-colors p-1 cursor-pointer"
+                        title="Delete Item"
+                      >
+                        {/* If you have react-icons installed */}
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                       </button>
                     </td>
 
-                    {/* Print */}
-                    <td>
-                      <button
-                        onClick={() => printLabels(row)}
-                        className="text-purple-600 text-lg"
-                      >
-                        <FaPrint />
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
