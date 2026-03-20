@@ -1,490 +1,316 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
+import { 
+  ColumnDef, 
+  flexRender, 
+  getCoreRowModel, 
+  getFilteredRowModel, 
+  getSortedRowModel, 
+  useReactTable, 
+  SortingState 
 } from '@tanstack/react-table';
-import Link from 'next/link';
-import {
-  ArrowUpDown,
-  Search,
-  SlidersHorizontal,
-  BarcodeIcon,
-  Shirt,
-  Package,
-  Baby,
-  PlusIcon
+import { 
+  Search, 
+  BarcodeIcon, 
+  Shirt, 
+  Baby, 
+  PlusIcon, 
+  ChevronLeft, 
+  ChevronRight, 
+  Filter, 
+  ArrowUpDown 
 } from 'lucide-react';
-
 import JsBarcode from "jsbarcode";
-import { QRCodeCanvas } from "qrcode.react";
-import { get } from 'http';
 
 /* ================= TYPES ================= */
-interface Item {
-  sno: number;
-  id: string;
-  product: string;
-  category: string;
-  unit: string;
+interface SizeDataItem {
+  size: string;
   quantity: number;
-  sizes: string;
   price: string;
-  sizeData?: any[];
-  productIcon: React.ReactNode;
 }
 
-/* ================= CONFIG ================= */
+interface RawItem {
+  _id: string;
+  title: string;
+  gender: string;
+  brand: string;
+  created_on: string;
+  size_data: SizeDataItem[];
+}
+
+interface TableItem extends RawItem {
+  sno: number;
+  totalQty: number;
+  priceRange: string;
+  icon: React.ReactNode;
+}
+
+interface TagPreviewData extends RawItem {
+  selectedSize: string;
+  selectedPrice: string;
+  barcode: string;
+  sku: string;
+}
+
 const API_URL = 'https://dev.zuget.com/admin/total-items';
 const PAGE_SIZE = 10;
 
+const generateBarcode = (sku: string): string => {
+  const canvas = document.createElement("canvas");
+  JsBarcode(canvas, sku, { format: "CODE128", height: 40, fontSize: 12 });
+  return canvas.toDataURL("image/png");
+};
+
 export default function TotalItemsPage() {
-  /* ================= BARCODE SCANNER CONSOLE TEST ================= */
+  const [items, setItems] = useState<TableItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [page, setPage] = useState<number>(1);
+  const [globalFilter, setGlobalFilter] = useState<string>('');
+  const [genderFilter, setGenderFilter] = useState<string>('All');
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [selectedItem, setSelectedItem] = useState<TableItem | null>(null);
+  const [tagPreview, setTagPreview] = useState<TagPreviewData | null>(null);
+
+  /* ================= DATA FETCHING ================= */
   useEffect(() => {
-    let barcodeBuffer = "";
-    let lastKeyTime = Date.now();
+    const fetchItems = async () => {
+      setLoading(true);
+      try {
+        const phone = localStorage.getItem('user_phone');
+        const token = localStorage.getItem(`${phone}_token`) || '';
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const now = Date.now();
+        // Added cache buster to ensure fresh data
+        const res = await fetch(`${API_URL}?limit=1000&offset=0`, {
+          headers: { Authorization: token },
+        });
 
-      // If typing gap is large → reset buffer
-      // (prevents normal typing from mixing)
-      if (now - lastKeyTime > 100) {
-        barcodeBuffer = "";
-      }
+        const json = await res.json();
+        const rawData: RawItem[] = json.data?.total_items || [];
 
-      lastKeyTime = now;
+        const mapped: TableItem[] = rawData.map((item, idx) => ({
+          ...item,
+          sno: idx + 1,
+          totalQty: item.size_data.reduce((sum, s) => sum + s.quantity, 0),
+          priceRange: [...new Set(item.size_data.map(s => s.price))].join(' - '),
+          icon: item.gender === 'Kids' 
+            ? <Baby className="text-pink-500" size={18} /> 
+            : <Shirt className="text-blue-500" size={18} />
+        }));
 
-      // ENTER = scan completed
-      if (e.key === "Enter") {
-        if (barcodeBuffer.length > 5) {
-          const cleaned = cleanBarcode(barcodeBuffer);
-
-          console.log(
-            "%c✅ SCANNED BARCODE:",
-            "color: green; font-weight: bold;",
-            cleaned
-          );
-        }
-
-        barcodeBuffer = "";
-        return;
-      }
-
-      // collect characters only
-      if (e.key.length === 1) {
-        barcodeBuffer += e.key;
+        setItems(mapped);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
       }
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () =>
-      window.removeEventListener("keydown", handleKeyDown);
+    fetchItems();
   }, []);
 
-  /* ================= CLEAN BARCODE ================= */
-  const cleanBarcode = (raw: string) => {
-    let barcode = raw.trim();
-
-    // remove duplicated barcode (common scanner issue)
-    const half = Math.floor(barcode.length / 2);
-
-    if (barcode.slice(0, half) === barcode.slice(half)) {
-      barcode = barcode.slice(0, half);
-    }
-
-    return barcode;
-  };
-
-
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [globalFilter, setGlobalFilter] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-
-  const [tagPreview, setTagPreview] = useState<any>(null);
-
-  // Size popup states
-  const [showSizePopup, setShowSizePopup] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [selectedSize, setSelectedSize] = useState('');
-  const [selectedPrice, setSelectedPrice] = useState('');
-
-  const offset = (page - 1) * PAGE_SIZE / 10;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-  /* ================= FETCH ================= */
-  useEffect(() => {
-    fetchItems();
-  }, [page]);
-
-  const fetchItems = async () => {
-    setLoading(true);
-    try {
-      const token =
-        localStorage.getItem(`${localStorage.getItem('user_phone')}_token`) || '';
-
-      const res = await fetch(`${API_URL}?limit=${PAGE_SIZE}&offset=${offset}`, {
-        headers: {
-          accept: 'application/json',
-          Authorization: token,
-        },
-      });
-
-      const json = await res.json();
-      setTotalCount(json?.data?.total_items_count || 0);
-
-      const mapped: Item[] = json.data.total_items.map((item: any, idx: number) => {
-        const totalQty = item.size_data.reduce(
-          (sum: number, s: any) => sum + s.quantity,
-          0
-        );
-
-        const sizes = item.size_data
-          .map((s: any) => `${s.size}-${s.quantity}`)
-          .join(', ');
-
-        const prices = Array.from(
-          new Set(item.size_data.map((s: any) => s.price))
-        ).join(' - ');
-
-        return {
-          sno: (page - 1) * PAGE_SIZE + idx + 1,
-          id: String(item._id),
-          product: item.title,
-          category: item.gender,
-          unit: 'Piece',
-          quantity: totalQty,
-          sizes,
-          price: prices,
-          sizeData: item.size_data, // ✅ store all size data
-          productIcon:
-            item.gender === 'Kids' ? (
-              <Baby className="w-5 h-5 text-pink-500" />
-            ) : item.gender === 'Male' ? (
-              <Shirt className="w-5 h-5 text-blue-500" />
-            ) : (
-              <Package className="w-5 h-5 text-purple-500" />
-            ),
-        };
-      });
-
-      setItems(mapped);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /* ================= BARCODE GENERATOR ================= */
-  const generateBarcode = (sku: string, label: string) => {
-    const canvas = document.createElement("canvas");
-
-    JsBarcode(canvas, sku, {
-      format: "CODE128",
-      height: 60,
-      fontSize: 12,
-      text: label,
-      textMargin: 6,
-      marginTop: 8,
-    });
-
-    return canvas.toDataURL("image/png");
-  };
-
-  /* ================= TABLE ================= */
-  const columns = useMemo<ColumnDef<Item>[]>(() => [
-    { header: 'sno', accessorKey: 'sno' },
-    { header: 'ID', accessorKey: 'id' },
+  /* ================= TABLE CONFIG ================= */
+  const columns = useMemo<ColumnDef<TableItem>[]>(() => [
+    { header: '#', accessorKey: 'sno' },
     {
       header: 'Product',
-      accessorKey: 'product',
+      accessorKey: 'title', // Necessary for global filter
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-            {row.original.productIcon}
+          <div className="p-2 bg-gray-100 rounded-lg">{row.original.icon}</div>
+          <div className="flex flex-col">
+            <span className="font-bold text-gray-800 uppercase text-xs">{row.original.title}</span>
+            <span className="text-[10px] text-gray-400 italic">{row.original.brand}</span>
           </div>
-          <span className="font-medium">{row.original.product}</span>
         </div>
-      ),
+      )
     },
-    { header: 'Category', accessorKey: 'category' },
-    { header: 'Quantity', accessorKey: 'quantity' },
-    {
-      header: 'Sizes',
-      accessorKey: 'sizes',
-      cell: ({ getValue }) => (
-        <span className="text-xs text-gray-500">{getValue<string>()}</span>
-      ),
+    { 
+        header: 'Gender', 
+        accessorKey: 'gender',
+        cell: ({getValue}) => <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100">{getValue() as string}</span>
     },
-    { header: 'Price', accessorKey: 'price' },
-
+    { header: 'Qty', accessorKey: 'totalQty' },
+    { 
+        header: 'Price', 
+        accessorKey: 'priceRange',
+        cell: ({getValue}) => <span className="font-semibold text-green-700">₹{getValue() as string}</span>
+    },
+    { 
+        header: 'Date', 
+        accessorKey: 'created_on',
+        cell: ({getValue}) => {
+            const d = new Date(getValue() as string);
+            return <span className="text-xs text-gray-500">{d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
+        }
+    },
     {
       id: 'action',
-      header: '',
-      cell: ({ row }) => {
-        const item = row.original;
-
-        const handleGenerate = () => {
-          setSelectedItem(item);
-          setSelectedSize('');
-          setSelectedPrice('');
-          setShowSizePopup(true);
-        };
-
-        return (
-          <button
-            onClick={handleGenerate}
-            className="bg-orange-400 rounded-full px-2 py-1 text-xs flex gap-x-1 items-center hover:scale-105 cursor-pointer transition"
-          >
-            Generate <BarcodeIcon className="w-4 h-4" />
-          </button>
-        );
-      },
+      header: 'Label',
+      cell: ({ row }) => (
+        <button
+          onClick={() => setSelectedItem(row.original)}
+          className="bg-black text-white px-4 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-2 hover:bg-gray-800 transition"
+        >
+          GENERATE <BarcodeIcon size={12} />
+        </button>
+      ),
     },
   ], []);
 
+  // Filter items based on gender before passing to table
+  const filteredData = useMemo(() => {
+    if (genderFilter === 'All') return items;
+    return items.filter(item => item.gender === genderFilter);
+  }, [items, genderFilter]);
+
   const table = useReactTable({
-    data: items,
+    data: filteredData,
     columns,
-    state: { globalFilter },
+    state: { globalFilter, sorting },
     onGlobalFilterChange: setGlobalFilter,
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
 
-  /* ================= UI ================= */
-  if (loading) {
-    return <div className="p-6 rounded-xl border bg-white dark:bg-gray-900">Loading items…</div>;
-  }
-  interface UserTy {
-    id: number,
-    name: string,
-    email: string
-  }
-  const Userdh = {
-    id: 2,
-    name: "John Doe",
-    email: "jon@gmail,com"
-  }
-  interface User {
-    id: number;
-    name: string;
-    email: string;
-    isAdmin?: boolean; // optional
-  }
-  const user: User = {
-    id: 1,
-    name: "Satish",
-    email: "test@gmail.com"
-  };
-
+  if (loading) return <div className="p-20 text-center font-bold text-gray-400 animate-pulse">LOADING INVENTORY...</div>;
 
   return (
-    <main className="space-y-6">
-      {/* <p>kkk</p> */}
-      {/* ================= SIZE POPUP ================= */}
-      {showSizePopup && selectedItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-xl w-72 space-y-3">
-            <h3 className="font-semibold text-sm">
-              Select Size for {selectedItem.product}
-            </h3>
-
-            <select
-              className="w-full border px-2 py-1 rounded"
-              value={selectedSize}
-              onChange={(e) => {
-                const size = e.target.value;
-                setSelectedSize(size);
-
-                const priceObj = selectedItem.sizeData.find((s: any) => s.size === size);
-                setSelectedPrice(priceObj?.price || '');
-              }}
-            >
-              <option value="">Select Size</option>
-              {selectedItem.sizeData.map((s: any) => (
-                <option key={s.size} value={s.size}>
-                  {s.size}
-                </option>
-              ))}
-            </select>
-
-            {selectedPrice && (
-              <p className="text-xs font-medium">Price: ₹{selectedPrice}</p>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-3 py-1 bg-gray-300 rounded"
-                onClick={() => setShowSizePopup(false)}
-              >
-                Cancel
-              </button>
-
-              <button
-                className="px-3 py-1 bg-orange-500 text-white rounded disabled:opacity-50"
-                disabled={!selectedSize}
-                onClick={() => {
-                  const sku = `${localStorage.getItem("store_id")}-${selectedItem.id}-${selectedSize}-${selectedPrice}`;
-                  // console.log(sku, 'skuuuu');
-
-                  const barcode = generateBarcode(sku, "Product Code");
-
-                  const tagData = {
-                    sku,
-                    product: selectedItem.product,
-                    size: selectedSize,
-                    price: selectedPrice,
-                    barcode,
-                  };
-
-                  sessionStorage.setItem(`tag_${selectedItem.id}_${selectedSize}`, JSON.stringify(tagData));
-                  setTagPreview(tagData);
-                  setShowSizePopup(false);
-                }}
-              >
-                Generate Barcode
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= TAG PREVIEW POPUP ================= */}
-      {tagPreview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-xl space-y-3 print-area">
-
-            <div className="w-[220px] border p-2 rounded bg-white text-xs">
-              <div className="font-semibold text-center text-[11px]">
-                {tagPreview.product}
-              </div>
-
-              <div className="flex justify-between mt-1 text-[10px]">
-                <span>Size: {tagPreview.size}</span>
-                <span>₹{tagPreview.price}</span>
-              </div>
-
-              <div className="mt-2 flex justify-center">
-                <img src={tagPreview.barcode} className="h-12" />
-              </div>
-
-              <div className="text-center text-[9px] mt-1">{tagPreview.sku}</div>
-
-              {/* <div className="flex justify-center mt-2">
-                <QRCodeCanvas value={tagPreview.sku} size={50} />
-              </div>
-
-              <div className="text-center text-[8px] mt-1 text-gray-500">
-                Scan for authenticity
-              </div> */}
-            </div>
-
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => window.print()}
-                className="px-3 py-1 bg-green-600 text-white rounded"
-              >
-                Print
-              </button>
-
-              <button
-                onClick={() => setTagPreview(null)}
-                className="px-3 py-1 bg-red-500 text-white rounded"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= MAIN TABLE ================= */}
-      <div className="rounded-2xl bg-white dark:bg-gray-900">
-
+    <main className="p-4 space-y-4 max-w-7xl mx-auto">
+      
+      {/* FILTER & SEARCH BAR */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-4 rounded-2xl shadow-sm border items-end">
+        
         {/* Search */}
-        <div className="flex flex-col sm:flex-row justify-between gap-3 p-4">
+        <div className="md:col-span-2 space-y-1">
+          <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Search Products</label>
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
             <input
-              className="pl-9 pr-3 py-2 border rounded-md text-sm bg-transparent"
-              placeholder="Search"
+              placeholder="Search by title, brand, id..."
+              className="pl-10 w-full border-gray-200 border rounded-xl p-2.5 text-sm focus:ring-2 ring-black/5 outline-none transition"
               value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
+              onChange={e => setGlobalFilter(e.target.value)}
             />
           </div>
-
-          <Link href={'/test'} className="flex items-center gap-1 px-3 py-2 border rounded-md text-sm">
-            <PlusIcon className="w-4 h-4" /> Add Item
-          </Link>
         </div>
 
-        {/* Table */}
+        {/* Gender Filter */}
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Gender</label>
+          <select 
+            className="w-full border-gray-200 border rounded-xl p-2.5 text-sm outline-none bg-gray-50 font-medium"
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value)}
+          >
+            <option value="All">All Genders</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Kids">Kids</option>
+          </select>
+        </div>
+
+        {/* Sort Trigger */}
+        <div className="space-y-1">
+            <button 
+                onClick={() => setSorting([{ id: 'created_on', desc: !sorting[0]?.desc }])}
+                className="w-full bg-gray-100 p-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-gray-200 transition"
+            >
+                <ArrowUpDown size={16} /> Sort by Date {sorting[0]?.desc ? '(New)' : '(Old)'}
+            </button>
+        </div>
+      </div>
+
+      {/* TABLE BODY */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden border">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              {table.getHeaderGroups().map((hg) => (
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50/50 border-b">
+              {table.getHeaderGroups().map(hg => (
                 <tr key={hg.id}>
-                  {hg.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      onClick={header.column.getToggleSortingHandler()}
-                      className="px-4 py-3 text-left cursor-pointer"
-                    >
-                      <div className="flex items-center gap-1">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                        <ArrowUpDown className="w-3 h-3 opacity-40" />
-                      </div>
+                  {hg.headers.map(h => (
+                    <th key={h.id} className="px-4 py-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider">
+                      {flexRender(h.column.columnDef.header, h.getContext())}
                     </th>
                   ))}
                 </tr>
               ))}
             </thead>
-
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="border-t-2 border-t-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
+            <tbody className="divide-y">
+              {table.getRowModel().rows.length > 0 ? (
+                table.getRowModel().rows.map(row => (
+                  <tr key={row.id} className="hover:bg-gray-50/80 transition group">
+                    {row.getVisibleCells().map(cell => (
+                      <td key={cell.id} className="px-4 py-4 text-gray-600 font-medium">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                    <td colSpan={7} className="p-10 text-center text-gray-400 italic">No matching items found...</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between p-4 text-sm">
-          <span>
-            Showing {offset * 10 + 1}–{Math.min(offset + 10 + PAGE_SIZE * 10, offset * 10 + items.length)}
-          </span>
-
-          <div className="flex items-center justify-center gap-x-4">
-            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border rounded hover:bg-red-400">
-              Prev
-            </button>
-            <span className='px-3 py-1 border rounded bg-blue-500 text-white font-bold'>{page}</span>
-            {/* <button onClick={() => setPage(1)} className="px-3 py-1 border rounded">1</button>
-            <button onClick={() => setPage(2)} className="px-3 py-1 border rounded">2</button>
-            <button onClick={() => setPage(3)} className="px-3 py-1 border rounded">3</button> */}
-            <button disabled={page === totalPages || items.length < PAGE_SIZE} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border rounded">
-              Next
-            </button>
+      {/* MODALS REMAIN THE SAME BUT WITH UPDATED STYLING */}
+      {selectedItem && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl">
+            <h2 className="font-black text-xl mb-1 text-gray-900 uppercase italic">Select Size</h2>
+            <p className="text-gray-400 text-xs mb-6 font-medium">{selectedItem.title}</p>
+            <div className="grid grid-cols-2 gap-3 mb-8">
+              {selectedItem.size_data.map((s) => (
+                <button
+                  key={s.size}
+                  className="group p-3 border-2 border-gray-100 rounded-2xl hover:border-black hover:bg-black hover:text-white transition-all text-center"
+                  onClick={() => {
+                    const storeId = localStorage.getItem("store_id") || '000';
+                    const sku = `${storeId}-${selectedItem._id}-${s.size}`;
+                    setTagPreview({
+                      ...selectedItem,
+                      selectedSize: s.size,
+                      selectedPrice: s.price,
+                      barcode: generateBarcode(sku),
+                      sku
+                    });
+                    setSelectedItem(null);
+                  }}
+                >
+                  <div className="text-sm font-black">{s.size}</div>
+                  <div className="text-[10px] opacity-60">₹{s.price}</div>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setSelectedItem(null)} className="w-full font-bold text-gray-400 hover:text-black transition">CANCEL</button>
           </div>
         </div>
-      </div>
+      )}
+
+      {tagPreview && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-md">
+          <div className="bg-white rounded-3xl p-10 text-center space-y-6 shadow-2xl">
+            <div className="border-4 border-dashed border-gray-200 p-6 rounded-2xl bg-white w-64 mx-auto">
+              <p className="font-black text-xs uppercase mb-2">{tagPreview.title}</p>
+              <div className="flex justify-between text-xs mb-4 font-mono bg-gray-100 p-2 rounded">
+                <span className="font-bold">{tagPreview.selectedSize}</span>
+                <span className="font-black text-green-700">₹{tagPreview.selectedPrice}</span>
+              </div>
+              <img src={tagPreview.barcode} className="w-full h-12 object-contain mb-2" alt="barcode" />
+              <p className="text-[9px] font-mono text-gray-400">{tagPreview.sku}</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => window.print()} className="flex-1 bg-green-600 text-white py-3 rounded-2xl font-black hover:bg-green-700 shadow-lg shadow-green-200">PRINT TAG</button>
+              <button onClick={() => setTagPreview(null)} className="flex-1 bg-gray-100 py-3 rounded-2xl font-black text-gray-600">CLOSE</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
