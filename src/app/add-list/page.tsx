@@ -579,7 +579,7 @@ export default function ProductTable() {
   // Zuget brands
   const [brandsList, setBrandsList] = useState<any[]>([]);
 
-  const genders = ["Mens", "Womens", "Girls", "Boys", "Unisex"];
+  const genders = ["Men", "Women", "Girl", "Boy", "Unisex"];
   const fetchBrands = async () => {
     const storeId = localStorage.getItem("store_id");
 
@@ -736,11 +736,11 @@ export default function ProductTable() {
   };
 
   const updateQty = (index: number, size: keyof Sizes, value: any) => {
-  const updated = [...rows];
-  // Convert to number here so your state remains consistent for the API
-  updated[index].sizes[size].quantity = value === "" ? 0 : Number(value);
-  setRows(updated);
-};
+    const updated = [...rows];
+    // Convert to number here so your state remains consistent for the API
+    updated[index].sizes[size].quantity = value === "" ? 0 : Number(value);
+    setRows(updated);
+  };
 
   const uploadToS3 = async (file: File): Promise<string> => {
     const formdata = new FormData();
@@ -808,7 +808,7 @@ export default function ProductTable() {
       { value: row.neck_type, label: "Neck Type" },
       { value: row.sleeve_type, label: "Sleeve Type" },
       // { value: row.description, label: "Description" },
-      { value: row.frontImage, label: "Front Image" },  // Added Front Image
+      { value: row.frontImage, label: "Front Image" },
       { value: row.backImage, label: "Back Image" },
     ];
 
@@ -853,7 +853,7 @@ export default function ProductTable() {
         brand: row.brand,
         item_name: row.item,
         category: "Mens Clothing",
-        gender: "Mens",
+        gender: "Men",
         item_category: row.item_category,
         item_image: imageUrl,
         item_video: videoUrl,
@@ -995,7 +995,7 @@ export default function ProductTable() {
     } catch (error) {
       console.error(error);
     }
-    finally{
+    finally {
       fetchLists()
     }
   };
@@ -1046,7 +1046,7 @@ export default function ProductTable() {
   /* ---------------- RENDER ---------------- */
 
   return (
-    <div className="p-6">
+    <div className="p-1">
       <div className="flex gap-x-10 pb-4">
         <button
           onClick={() => {
@@ -1069,38 +1069,41 @@ export default function ProductTable() {
       </div>
 
       {!prevAddedItems ? (
-        <div>
-          <div className="overflow-auto border rounded-xl">
-            <table className="min-w-full text-center border text-sm">
-              <thead className="bg-gray-100">
+        <div className="h-screen flex flex-col">
+          {/* ... inside the !prevAddedItems condition ... */}
+          <div className="flex-1 overflow-auto border rounded-md">
+  <table className="min-w-full border-separate border-spacing-0 text-sm">
+              <thead className="bg-gray-100 sticky top-0 z-10 shadow-sm"> {/* Added sticky, top-0, z-index, and a subtle shadow */}
                 <tr>
-                  <th className="p-4">Item Name</th>
-                  <th className="p-4">Item Categeory</th>
-                  <th className="px-2">Brand</th>
-                  {/* <th>Category</th> */}
-                  {/* <th>Gender</th> */}
-                  <th>Color</th>
-                  <th>Fit</th>
-                  <th>sleeve</th>
-                  <th>Neck</th>
-                  <th>Pattern</th>
-                  <th>Front Image</th>
-                  <th>Back Image</th>
-                  {/* Add this inside <thead> <tr> */}
-                  <th className="bg-purple-100 p-2">Bulk Price</th>
-                  <th className="bg-purple-100 p-2">Bulk Qty</th>
+                  {/* Important: Add 'sticky top-0 bg-gray-100' to each <th> if the parent doesn't behave */}
+                  <th className="p-4 border-b text-left sticky top-0">Item Name</th>
+                  <th className="p-4 border-b text-left sticky top-0">Item Category</th>
+                  <th className="px-2 border-b text-left sticky top-0">Brand</th>
+                  <th className="border-b text-left sticky top-0">Color</th>
+                  <th className="border-b text-left sticky top-0">Fit</th>
+                  <th className="border-b text-left sticky top-0">Sleeve</th>
+                  <th className="border-b text-left sticky top-0">Neck</th>
+                  <th className="border-b text-left sticky top-0">Pattern</th>
+                  <th className="border-b text-left sticky top-0">Front Image</th>
+                  <th className="border-b text-left sticky top-0">Back Image</th>
+
+                  {/* Bulk sections */}
+                  <th className="bg-purple-100 p-2 border-b sticky top-0">Bulk Price</th>
+                  <th className="bg-purple-100 p-2 border-b sticky top-0">Bulk Qty</th>
+
+                  {/* Dynamic sizes */}
                   {sizes.filter(size => size !== 'xs').map((size) => (
                     <React.Fragment key={size}>
-                      <th>{size.toUpperCase()} Price</th>
-                      <th>{size.toUpperCase()} Qty</th>
+                      <th className="p-2 border-b bg-gray-100 sticky top-0">{size.toUpperCase()} Price</th>
+                      <th className="p-2 border-b bg-gray-100 sticky top-0">{size.toUpperCase()} Qty</th>
                     </React.Fragment>
                   ))}
 
-                  <th>Barcode</th>
-                  <th>Actions</th>
-
+                  <th className="p-4 border-b bg-gray-100 sticky top-0">Barcode</th>
+                  <th className="p-4 border-b bg-gray-100 sticky top-0">Actions</th>
                 </tr>
               </thead>
+              {/* ... <tbody> remains the same ... */}
 
               <tbody>
                 {rows.map((row, i) => (
@@ -1708,40 +1711,42 @@ export default function ProductTable() {
 
                     {/* Sizes (price + qty) */}
                     {/* Inside <tbody> rows.map */}
-                   {/* Filter out 'xs' from the row rendering */}
-{sizes.filter(size => size !== 'xs').map((size) => (
-  <React.Fragment key={size}>
-    {/* Price Input */}
-    <td className="p-1 border">
-      <input
-        type="text"
-        inputMode="numeric"
-        className="w-16 border rounded p-1 text-center"
-        value={row.sizes[size as keyof Sizes].price || ""}
-        onChange={(e) => {
-          const val = e.target.value.replace(/[^0-9]/g, "");
-          updatePrice(i, size as keyof Sizes, val);
-        }}
-        disabled={!!row.isSaved}
-      />
-    </td>
-    
-    {/* Quantity Input - Arrows Removed */}
-    <td className="p-1 border">
-      <input
-        type="text"
-        inputMode="numeric" 
-        className="w-12 border rounded p-1 text-center"
-        value={row.sizes[size as keyof Sizes].quantity || ""}
-        onChange={(e) => {
-          const val = e.target.value.replace(/[^0-9]/g, "");
-          updateQty(i, size as keyof Sizes, val);
-        }}
-        disabled={!!row.isSaved}
-      />
-    </td>
-  </React.Fragment>
-))}
+                    {/* Filter out 'xs' from the row rendering */}
+                    {sizes.filter(size => size !== 'xs').map((size) => (
+                      <React.Fragment key={size}>
+                        {/* Price Input */}
+                        <td className="p-1 border">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder={`${size}`}
+                            className="w-16 border rounded p-1 text-center"
+                            value={row.sizes[size as keyof Sizes].price || ""}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              updatePrice(i, size as keyof Sizes, val);
+                            }}
+                            disabled={!!row.isSaved}
+                          />
+                        </td>
+
+                        {/* Quantity Input - Arrows Removed */}
+                        <td className="p-1 border">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder={`price ${size}`}
+                            className="w-12 border rounded p-1 text-center"
+                            value={row.sizes[size as keyof Sizes].quantity || ""}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              updateQty(i, size as keyof Sizes, val);
+                            }}
+                            disabled={!!row.isSaved}
+                          />
+                        </td>
+                      </React.Fragment>
+                    ))}
 
                     {/* Description */}
                     {/* <td className="px-4">
@@ -1761,11 +1766,11 @@ export default function ProductTable() {
                       <button
                         disabled={!!row.isSaved || isSaving[i]}
                         onClick={() => saveRow(i)}
-                        className={`text-lg transition-all ${row.isSaved ? "text-gray-400" : "text-green-600 hover:scale-110"
+                        className={`text-lg transition-all cursor-pointer ${row.isSaved ? "text-gray-400" : "text-green-600 hover:scale-110"
                           }`}
                       >
                         {isSaving[i] ? (
-                          <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full cursor-pointer"></div>
+                          <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full  "></div>
                         ) : (
                           <FaSave size={30} />
                         )}
@@ -1776,7 +1781,7 @@ export default function ProductTable() {
 
                       <button
                         onClick={() => duplicateRow(row, i)}
-                        className="text-blue-600 text-lg cursor-pointer"
+                        className="text-blue-600 text-lg cursor-pointer hover:scale-110"
                       >
                         <FaClone size={30} />
                       </button>
@@ -1786,7 +1791,7 @@ export default function ProductTable() {
 
                       <button
                         onClick={() => printLabels(row)}
-                        className="text-purple-600 text-lg cursor-pointer"
+                        className="text-purple-600 text-lg cursor-pointer hover:scale-110"
                       >
                         <FaPrint size={30} />
                       </button>
@@ -1795,7 +1800,7 @@ export default function ProductTable() {
                       {/* --- DELETE BUTTON --- */}
                       <button
                         onClick={() => handleDelete(row.barcode)}
-                        className="text-red-500 hover:text-red-700 transition-colors p-1 cursor-pointer"
+                        className="text-red-500 hover:text-red-700 transition-colors p-1 cursor-pointer hover:scale-110"
                         title="Delete Item"
                       >
                         {/* If you have react-icons installed */}
@@ -1811,7 +1816,7 @@ export default function ProductTable() {
             </table>
           </div>
 
-          <div className="pt-20 float-end">
+          <div className="pt-4 float-end">
             <button
               onClick={saveItems}
               className="bg-purple-500 text-white rounded-md px-4 py-2 cursor-pointer"
