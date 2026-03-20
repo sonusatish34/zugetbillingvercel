@@ -1719,7 +1719,7 @@ export default function ProductTable() {
                           <input
                             type="text"
                             inputMode="numeric"
-                            placeholder={`Price ${size}`}
+                            placeholder={`Price`}
                             className="w-16 border rounded p-1 text-center"
                             value={row.sizes[size as keyof Sizes].price || ""}
                             onChange={(e) => {
@@ -1735,7 +1735,7 @@ export default function ProductTable() {
                           <input
                             type="text"
                             inputMode="numeric"
-                            placeholder={`Quantity ${size}`}
+                            placeholder={`${size}`}
                             className="w-12 border rounded p-1 text-center"
                             value={row.sizes[size as keyof Sizes].quantity || ""}
                             onChange={(e) => {
