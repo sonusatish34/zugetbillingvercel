@@ -441,15 +441,15 @@ export default function ProductTable() {
 `;
 
     Object.entries(row.sizes).forEach(([sizeKey, data]: any) => {
-  if (data.quantity > 0) {
-    // Get the correct label (e.g., "28" instead of "xs")
-    const displaySize = getDisplaySize(row, sizeKey); 
-    console.log(row,'0000-----');
-    
-    for (let i = 0; i < data.quantity; i++) {
-      const uniqueId = `bc_${sizeKey}_${i}_${Math.floor(Math.random() * 1000)}`;
+      if (data.quantity > 0) {
+        // Get the correct label (e.g., "28" instead of "xs")
+        const displaySize = getDisplaySize(row, sizeKey);
+        console.log(row, '0000-----');
 
-      html += `
+        for (let i = 0; i < data.quantity; i++) {
+          const uniqueId = `bc_${sizeKey}_${i}_${Math.floor(Math.random() * 1000)}`;
+
+          html += `
 <div class="label-container">
   <div class="portrait-wrapper">
     <div style="display: flex; flex-direction: column;">
@@ -642,7 +642,97 @@ export default function ProductTable() {
     // ... rest of your brand fetching logic
   }, []);
 
+  const addFilterCategory = async (index: number, categoryValue: string) => {
+    const row = rows[index];
+    const trimmedCategory = categoryValue.trim();
 
+    if (!row.item || row.item === "Select") {
+      alert("Please select an Item Name first.");
+      return;
+    }
+    if (!trimmedCategory) return;
+
+    // Duplicate Check
+    const currentList = itemCategoriesList[index] || [];
+    const isDuplicate = currentList.some(
+      (cat: any) => cat.category?.toLowerCase() === trimmedCategory.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      alert(`Category "${trimmedCategory}" already exists for ${row.item}.`);
+      return;
+    }
+
+    try {
+      // Exact URL from your curl: /util/add-filter-categories?item_name=Jeans&category=test
+      const url = `${API_BASE}/util/add-filter-categories?item_name=${encodeURIComponent(row.item)}&category=${encodeURIComponent(trimmedCategory)}`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          accept: "application/json",
+          Authorization: authtoken,
+        },
+      });
+
+      const result = await res.json();
+      if (result.status === "success" || res.ok) {
+        // Refresh only the list for this specific row
+        fetchItemCategories(index, row.item);
+        toast.success("Category added successfully");
+      } else {
+        alert(result.message || "Failed to add category");
+      }
+    } catch (error) {
+      console.error("Error adding category:", error);
+    }
+  };
+  const addFitCategory = async (index: number, fitValue: string) => {
+  const row = rows[index];
+  const trimmedFit = fitValue.trim();
+
+  if (!row.item || row.item === "Select") {
+    alert("Please select an Item Name first.");
+    return;
+  }
+  if (!trimmedFit) return;
+
+  // Duplicate Check
+  const currentList = fitCategoriesByRow[index] || [];
+  const isDuplicate = currentList.some(
+    (f: any) => f.name?.toLowerCase() === trimmedFit.toLowerCase()
+  );
+
+  if (isDuplicate) {
+    alert(`Fit "${trimmedFit}" already exists for ${row.item}.`);
+    return;
+  }
+
+  try {
+    // API uses POST with query params as per your curl
+    const url = `${API_BASE}/util/add-fit-categories?name=${encodeURIComponent(trimmedFit)}&item_name=${encodeURIComponent(row.item)}`;
+    
+    const res = await fetch(url, {
+      method: "POST", // Changed to POST
+      headers: {
+        accept: "application/json",
+        Authorization: authtoken,
+      },
+      body: "", // Empty body as per -d ''
+    });
+
+    const result = await res.json();
+    if (result.status === "success" || res.ok) {
+      // Refresh the specific Fit list for this row
+      fetchFitCategories(index, row.item);
+      toast.success("Fit added successfully");
+    } else {
+      alert(result.message || "Failed to add fit");
+    }
+  } catch (error) {
+    console.error("Error adding fit:", error);
+  }
+};
 
   const addBrand = async (value: string) => {
     const brand = value.trim();
@@ -738,20 +828,20 @@ export default function ProductTable() {
     });
     setRows(updated);
   };
-useEffect(() => {
-  const handlers = rows.map((row, index) => {
-    if (!row.item || row.item === "Select" || row.item === "") return null;
+  useEffect(() => {
+    const handlers = rows.map((row, index) => {
+      if (!row.item || row.item === "Select" || row.item === "") return null;
 
-    const timeoutId = setTimeout(() => {
-      fetchItemCategories(index, row.item);
-      fetchFitCategories(index, row.item);
-    }, 100); // 2 seconds delay
+      const timeoutId = setTimeout(() => {
+        fetchItemCategories(index, row.item);
+        fetchFitCategories(index, row.item);
+      }, 100); // 2 seconds delay
 
-    return timeoutId;
-  });
+      return timeoutId;
+    });
 
-  return () => handlers.forEach(id => id && clearTimeout(id));
-}, [rows.map(r => r.item).join(",")]);
+    return () => handlers.forEach(id => id && clearTimeout(id));
+  }, [rows.map(r => r.item).join(",")]);
   const updateField = (index: number, field: string, value: any) => {
     const updated = [...rows];
     (updated[index] as any)[field] = value;
@@ -1244,23 +1334,34 @@ useEffect(() => {
                             disabled={!!row.isSaved}
                             style={{ border: "none", padding: "5px", flex: 1, outline: "none" }}
                             list={`item-cat-list-${i}`}
-                            value={row.item_category} // FIXED: Use item_category
-                            onChange={(e) => updateField(i, "item_category", e.target.value)} // FIXED: Update item_category
+                            value={row.item_category}
+                            onChange={(e) => updateField(i, "item_category", e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                addToZugetUtil(
-                                  e.currentTarget.value,
-                                  "/util/add-product-categories",
-                                  "category",
-                                  "/util/product-category-details",
-                                  setCategoriesList,
-                                  "Item Category",
-                                  categoriesList
-                                );
+                                addFilterCategory(i, e.currentTarget.value);
                               }
                             }}
                           />
-                          {/* ... button logic ... */}
+
+                          <button
+                            onClick={(e) => {
+                              // Find the input relative to this button
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addFilterCategory(i, input.value);
+                            }}
+                            style={{
+                              border: "none",
+                              background: "purple",
+                              color: "white",
+                              cursor: "pointer",
+                              padding: "2px 8px",
+                              fontSize: "18px",
+                            }}
+                            className="rounded-md"
+                            title="Add new category"
+                          >
+                            +
+                          </button>
                         </div>
 
                         <datalist id={`item-cat-list-${i}`}>
@@ -1456,68 +1557,49 @@ useEffect(() => {
 
                     {/* Fit from Zuget */}
                     <td className="px-4">
-                      <div style={{ position: "relative", width: "160px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            border: "1px solid #ccc",
-                            borderRadius: "4px",
-                          }}
-                        >
-                          <input
-                            disabled={!!row.isSaved}
-                            list={`fits-list-${i}`}
-                            placeholder="Fit..."
-                            style={{
-                              border: "none",
-                              padding: "5px",
-                              flex: 1,
-                              outline: "none",
-                              width: "100%",
-                            }}
-                            onChange={(e) =>
-                              updateField(i, "fit", e.target.value)
-                            }
-                            value={row.fit}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                addToZugetUtil(e.currentTarget.value, "/util/add-fit", "fit", "/util/fit-categories", setFits, "Fit", fits);
-                              }
-                            }}
-                          />
+  <div style={{ position: "relative", width: "160px" }}>
+    <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+      <input
+        disabled={!!row.isSaved}
+        list={`fits-list-${i}`}
+        placeholder="Fit..."
+        style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
+        value={row.fit}
+        onChange={(e) => updateField(i, "fit", e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            addFitCategory(i, e.currentTarget.value);
+          }
+        }}
+      />
 
-                          <button
-                            onClick={(e) => {
-                              const input = e.currentTarget.previousSibling as HTMLInputElement;
-                              addToZugetUtil(input.value, "/util/add-fit", "fit", "/util/fit-categories", setFits, "Fit", fits);
-                            }}
-                            style={{
-                              border: "none",
-                              background: "purple",
-                              color: "white",
-                              cursor: "pointer",
-                              padding: "2px 8px",
-                              fontSize: "18px",
-                            }}
-                            className="rounded-md"
-                            title="Add new fit"
-                          >
-                            +
-                          </button>
-                        </div>
+      <button
+        onClick={(e) => {
+          const input = e.currentTarget.previousSibling as HTMLInputElement;
+          addFitCategory(i, input.value);
+        }}
+        style={{
+          border: "none",
+          background: "purple",
+          color: "white",
+          cursor: "pointer",
+          padding: "2px 8px",
+          fontSize: "18px",
+        }}
+        className="rounded-md"
+        title="Add new fit"
+      >
+        +
+      </button>
+    </div>
 
-                        <datalist id={`fits-list-${i}`}>
-                          {/* Look up the categories for this specific row index 'i' */}
-                          {(fitCategoriesByRow[i] || []).map((f: any) => (
-                            <option
-                              key={f._id || f.name}
-                              value={f.name}
-                            />
-                          ))}
-                        </datalist>
-                      </div>
-                    </td>
+    <datalist id={`fits-list-${i}`}>
+      {(fitCategoriesByRow[i] || []).map((f: any) => (
+        <option key={f._id || f.name} value={f.name} />
+      ))}
+    </datalist>
+  </div>
+</td>
 
                     {/* Sleeve from local server */}
                     {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
@@ -1634,7 +1716,7 @@ useEffect(() => {
                     </td> : <td className="px-5">N/A</td>}
 
                     {/* Pattern from Zuget */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ?<td className="px-4">
+                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1693,7 +1775,7 @@ useEffect(() => {
                           ))}
                         </datalist>
                       </div>
-                    </td> :<td className="px-5">N/A</td>}
+                    </td> : <td className="px-5">N/A</td>}
 
                     {/* Front image */}
                     <td className="px-4">
