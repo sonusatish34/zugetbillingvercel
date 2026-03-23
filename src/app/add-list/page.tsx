@@ -745,7 +745,7 @@ useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchItemCategories(index, row.item);
       fetchFitCategories(index, row.item);
-    }, 2000); // 2 seconds delay
+    }, 1000); // 2 seconds delay
 
     return timeoutId;
   });
