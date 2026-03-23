@@ -745,7 +745,7 @@ useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchItemCategories(index, row.item);
       fetchFitCategories(index, row.item);
-    }, 1000); // 2 seconds delay
+    }, 100); // 2 seconds delay
 
     return timeoutId;
   });
@@ -862,7 +862,7 @@ useEffect(() => {
       { value: row.item_category, label: "Item Category" },
       { value: row.color, label: "Color" },
       { value: row.fit, label: "Fit" },
-      { value: row.pattern, label: "Pattern" },
+      // { value: row.pattern, label: "Pattern" },
       // { value: row.neck_type, label: "Neck Type" },
       // { value: row.sleeve_type, label: "Sleeve Type" },
       // { value: row.description, label: "Description" },
@@ -920,7 +920,7 @@ useEffect(() => {
         item_video: videoUrl,
         fit: row.fit,
         color: row.color,
-        pattern: row.pattern,
+        pattern: isNumericItem ? "" : row.pattern,
         neck_type: isNumericItem ? "" : row.neck_type,
         sleeve_type: isNumericItem ? "" : row.sleeve_type,
         size_data,
@@ -1634,7 +1634,7 @@ useEffect(() => {
                     </td> : <td className="px-5">N/A</td>}
 
                     {/* Pattern from Zuget */}
-                    <td className="px-4">
+                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ?<td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1693,7 +1693,7 @@ useEffect(() => {
                           ))}
                         </datalist>
                       </div>
-                    </td>
+                    </td> :<td className="px-5">N/A</td>}
 
                     {/* Front image */}
                     <td className="px-4">
