@@ -329,8 +329,6 @@ export default function ProductTable() {
       alert("Please save product first to generate barcode");
       return;
     }
-    // console.log(row, '=========');
-
 
     const win = window.open("", "_blank");
     if (!win) {
@@ -385,20 +383,20 @@ export default function ProductTable() {
       word-break: break-word; /* Wrap long store names */
     }
 
-    .barcode-section {
-  background: #fff;
-}
+    .barcode-section { 
+    background: #fff; 
+    width: 100%; 
+    padding: 0; /* Remove container padding */
+    margin: 0;
+  }
 
     .barcode-svg {
-    max-width: 100%;
-    height: 60px; /* Increased height helps the scanner find the line faster */
+    width: 100%; 
+    height: 100px; /* Increased height for better vertical scanning */
     display: block;
-  
-  /* The most important lines for barcode clarity: */
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  shape-rendering: crispEdges;
-}
+    margin: 0 auto;
+    shape-rendering: crispEdges; /* CRITICAL: Stops anti-aliasing (blur) */
+  }
 
     .barcode-number { font-size: 12px; font-weight: 800; }
    
@@ -478,19 +476,20 @@ export default function ProductTable() {
     document.querySelectorAll('.barcode-svg').forEach(el => {
       JsBarcode(el, el.getAttribute('data-value'), {
         format: "CODE128",
-        width: 2,       // Use a whole number (2) for much sharper lines
-        height: 60,      // Taller barcodes scan significantly faster
+        width: 2,           // Standard width for 100mm labels
+        height: 100,         // Increased from 80 to 100 for a taller target
         displayValue: false,
-        margin: 10,      // Adds a "Quiet Zone" so the scanner knows where the code starts
+        margin: 0,           // REMOVED SIDE PADDING
         background: "#ffffff",
-        lineColor: "#000000"
+        lineColor: "#000000",
+        flat: true           // Helps with rendering consistency
       });
     });
 
     setTimeout(() => {
       window.print();
       window.close();
-    }, 500);
+    }, 700); // Increased delay slightly to ensure SVG renders fully before print
   };
 </script>
 </body>
