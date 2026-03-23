@@ -1,5 +1,77 @@
+// import { useState } from "react";
+
+// export default function ItemSelect({ i, updateField }) {
+
+//   const [items, setItems] = useState(["T Shirt", "Jeans", "Pant", "Shirt"]);
+//   const [search, setSearch] = useState("");
+
+//   const filtered = items.filter(v =>
+//     v.toLowerCase().includes(search.toLowerCase())
+//   );
+
+//   const addItem = () => {
+//     if (!search.trim()) return;
+//     if (!items.includes(search)) {
+//       setItems([...items, search]);
+//     }
+//     updateField(i, "item", search);
+//   };
+
+//   return (
+//     <div style={{ position: "relative", width: "200px" }}>
+
+//       <input
+//         value={search}
+//         placeholder="Search item"
+//         onChange={(e) => {
+//           setSearch(e.target.value);
+//           updateField(i, "item", e.target.value);
+//         }}
+//         style={{ width: "100%", padding: "6px" }}
+//       />
+
+//       {search && !items.includes(search) && (
+//         <button
+//           onClick={addItem}
+//           style={{
+//             position: "absolute",
+//             right: "-60px",
+//             top: "0px"
+//           }}
+//         >
+//           Add
+//         </button>
+//       )}
+
+//       <div
+//         style={{
+//           border: "1px solid #ccc",
+//           maxHeight: "120px",
+//           overflowY: "auto"
+//         }}
+//       >
+//         {filtered.map((v) => (
+//           <div
+//             key={v}
+//             onClick={() => {
+//               setSearch(v);
+//               updateField(i, "item", v);
+//             }}
+//             style={{
+//               padding: "5px",
+//               cursor: "pointer"
+//             }}
+//           >
+//             {v}
+//           </div>
+//         ))}
+//       </div>
+
+//     </div>
+//   );
+// }
 "use client";
-import { toast, Toaster } from 'react-hot-toast';
+
 import { useEffect, useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import heic2any from "heic2any"; // Add this to your imports
@@ -68,10 +140,6 @@ type Sizes = {
   xxl: SizeInfo;
   xxxl: SizeInfo;
   xxxxl: SizeInfo;
-  // Add these three:
-  sz9: SizeInfo;
-  sz10: SizeInfo;
-  sz11: SizeInfo;
 };
 
 type ProductRow = {
@@ -300,18 +368,14 @@ export default function ProductTable() {
       frontImage: null,
       backImage: null,
       sizes: {
-        xs: { price: 0, quantity: 0 },
-        s: { price: 0, quantity: 0 },
-        m: { price: 0, quantity: 0 },
-        l: { price: 0, quantity: 0 },
-        xl: { price: 0, quantity: 0 },
-        xxl: { price: 0, quantity: 0 },
-        xxxl: { price: 0, quantity: 0 },
-        xxxxl: { price: 0, quantity: 0 },
-        // Initialize new slots:
-        sz9: { price: 0, quantity: 0 },
-        sz10: { price: 0, quantity: 0 },
-        sz11: { price: 0, quantity: 0 },
+        xs: { ...row.sizes.xs },
+        s: { ...row.sizes.s },
+        m: { ...row.sizes.m },
+        l: { ...row.sizes.l },
+        xl: { ...row.sizes.xl },
+        xxl: { ...row.sizes.xxl },
+        xxxl: { ...row.sizes.xxxl },
+        xxxxl: { ...row.sizes.xxxxl },
       },
     };
 
@@ -329,7 +393,7 @@ export default function ProductTable() {
       alert("Please save product first to generate barcode");
       return;
     }
-    // console.log(row, '=========');
+    console.log(row, '=========');
 
 
     const win = window.open("", "_blank");
@@ -534,7 +598,9 @@ export default function ProductTable() {
           },
         }
       );
+
       const result = await res.json();
+
       if (result.status === "success" || res.ok) {
         fetchData(refreshEndpoint, setter);
         alert(`${label} added successfully`);
@@ -572,17 +638,12 @@ export default function ProductTable() {
       xxl: { price: 0, quantity: 0 },
       xxxl: { price: 0, quantity: 0 },
       xxxxl: { price: 0, quantity: 0 },
-      // Initialize new slots:
-      sz9: { price: 0, quantity: 0 },
-      sz10: { price: 0, quantity: 0 },
-      sz11: { price: 0, quantity: 0 },
     },
     isSaved: false,
   });
 
   const [patterns, setPatterns] = useState<any[]>([]);
   const [fits, setFits] = useState<any[]>([]);
-  const [fitCategoriesByRow, setFitCategoriesByRow] = useState<{ [key: number]: any[] }>({});
   const [rows, setRows] = useState<ProductRow[]>([createEmptyRow()]);
 
 
@@ -609,12 +670,9 @@ export default function ProductTable() {
     if (json.status === "success") {
       const brandNames = json.data.results
       setBrandsList(brandNames);
-      // console.log(brandNames, "brandNames");
+      console.log(brandNames, "brandNames");
     }
   };
-
-
-
 
 
   // Replace the useLocalList hooks for these three:
@@ -625,7 +683,7 @@ export default function ProductTable() {
   const [colorsList, setColorsList] = useState<any[]>([]);
   // Inside your useEffect (where you fetch fits and patterns):
   useEffect(() => {
-    // fetchData("/util/fit-categories", setFits);
+    fetchData("/util/fit-categories", setFits);
     fetchData("/util/patterns", setPatterns);
     fetchData("/util/color", setColorsList);
     fetchData("/util/product-category-details", setCategoriesList);
@@ -688,7 +746,7 @@ export default function ProductTable() {
         // Update with the full data results (including _id and name)
         if (json.status === "success") {
           setBrandsList(json.data.results || []);
-          toast.success("Brand added successfully", { duration: 2000 });
+          alert("Brand added successfully");
         }
       } else {
         alert(result.message || "Failed to add brand");
@@ -710,7 +768,7 @@ export default function ProductTable() {
     });
 
     const json = await res.json();
-    // console.log(json, "json in fetch");
+    console.log(json, "json in fetch");
 
     setter(json?.data?.results || []);
   };
@@ -733,28 +791,14 @@ export default function ProductTable() {
     });
     setRows(updated);
   };
-useEffect(() => {
-  const handlers = rows.map((row, index) => {
-    if (!row.item || row.item === "Select" || row.item === "") return null;
 
-    const timeoutId = setTimeout(() => {
-      fetchItemCategories(index, row.item);
-      fetchFitCategories(index, row.item);
-    }, 2000); // 2 seconds delay
-
-    return timeoutId;
-  });
-
-  return () => handlers.forEach(id => id && clearTimeout(id));
-}, [rows.map(r => r.item).join(",")]);
   const updateField = (index: number, field: string, value: any) => {
     const updated = [...rows];
     (updated[index] as any)[field] = value;
     setRows(updated);
-    // if (field === "item") {
-    //   fetchItemCategories(index, value);
-    //   fetchFitCategories(index, value);
-    // }
+    if (field === "item") {
+      fetchItemCategories(index, value);
+    }
   };
 
   const updatePrice = (index: number, size: keyof Sizes, value: any) => {
@@ -819,34 +863,9 @@ useEffect(() => {
       setIsSaving(prev => ({ ...prev, [index]: false }));
     }
   };
-
-  const fetchFitCategories = async (index: number, itemName: string) => {
-    if (!itemName || itemName === "Select") return;
-    try {
-      const res = await fetch(`${API_BASE}/util/fit-categories?item_name=${encodeURIComponent(itemName)}`, {
-        headers: { accept: "application/json", Authorization: authtoken }
-      });
-      const json = await res.json();
-      if (json.status === "success") {
-        setFitCategoriesByRow(prev => ({
-          ...prev,
-          [index]: json.data?.results || []
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching fit categories:", error);
-    }
-  };
-
-
   // 1. Updated saveRow function with proper loading and no success alert
   const saveRow = async (index: number) => {
     const row = rows[index];
-    const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"];
-
-    // Check if it's a numeric item
-    const isNumericItem = numericSizeItems.some((keyword) => item.includes(keyword));
 
     // Validation remains (you may want to replace this alert with a toast later)
     const requiredFields = [
@@ -858,8 +877,8 @@ useEffect(() => {
       { value: row.color, label: "Color" },
       { value: row.fit, label: "Fit" },
       { value: row.pattern, label: "Pattern" },
-      // { value: row.neck_type, label: "Neck Type" },
-      // { value: row.sleeve_type, label: "Sleeve Type" },
+      { value: row.neck_type, label: "Neck Type" },
+      { value: row.sleeve_type, label: "Sleeve Type" },
       // { value: row.description, label: "Description" },
       { value: row.frontImage, label: "Front Image" },
       { value: row.backImage, label: "Back Image" },
@@ -889,16 +908,13 @@ useEffect(() => {
       if (row.frontImage) imageUrl = await uploadToS3(row.frontImage);
       if (row.backImage) videoUrl = await uploadToS3(row.backImage);
 
-      const size_data = sizeKeys.map((key) => {
+      const size_data = sizes.map((key) => {
         const v = row.sizes[key as keyof Sizes];
-        const labels = getLabelsForRow(row);
-        const index = sizeKeys.indexOf(key);
-
+        const isXs = key === 'xs';
         return {
-          // This sends "28" or "M" to your database instead of "s" or "m"
-          size: labels[index] || key.toUpperCase(),
-          price: (Number(v.price) || 0),
-          quantity: (Number(v.quantity) || 0),
+          size: getDisplaySize(row, key),
+          price: isXs ? 0 : (Number(v.price) || 0),
+          quantity: isXs ? 0 : (Number(v.quantity) || 0),
         };
       });
 
@@ -916,8 +932,8 @@ useEffect(() => {
         fit: row.fit,
         color: row.color,
         pattern: row.pattern,
-        neck_type: isNumericItem ? "" : row.neck_type,
-        sleeve_type: isNumericItem ? "" : row.sleeve_type,
+        neck_type: row.neck_type,
+        sleeve_type: row.sleeve_type,
         size_data,
         product_description: "dummy",
       };
@@ -958,28 +974,35 @@ useEffect(() => {
     }
   };
 
-  // Update these two arrays found near the bottom of your helper functions
-  const sizes = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl", "sz9", "sz10", "sz11"];
-  const sizeKeys = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl", "sz9", "sz10", "sz11"];
+
+
+
+  const sizes = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl"];
 
   const SIZE_CONFIG = {
-    KIDS: ["0-3M", "3-6M", "6-12M", "1-2Y", "2-3Y", "3-4Y", "4-5Y", "5-6Y"],
-    JEANS: ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48"],
-    SHIRTS: ["S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"],
-  };
-  const getLabelsForRow = (row: ProductRow) => {
-    const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"];
-
-    if (numericSizeItems.some((keyword) => item.includes(keyword))) {
-      return SIZE_CONFIG.JEANS;
-    }
-    return SIZE_CONFIG.SHIRTS;
+    KIDS: [
+      "0-3 Months",
+      "3-6 Months",
+      "6-12 Months",
+      "1-2 Year",
+      "2-3 Year",
+      "3-4 Year",
+      "4-5 Year",
+      "5-6 Year",
+    ],
+    JEANS: ["28", "30", "32", "34", "36", "38", "40", "42"],
+    SHIRTS: ["S", "M", "L", "XL", "XXL", "3XL", "4XL"],
   };
 
   const getDisplaySize = (row: ProductRow, sizeKey: string) => {
     const index = [
-      "xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl", "sz9", "sz10", "sz11"
+      "s",
+      "m",
+      "l",
+      "xl",
+      "xxl",
+      "xxxl",
+      "xxxxl",
     ].indexOf(sizeKey);
     const gender = row.gender?.toLowerCase();
     const item = row.item?.toLowerCase() || "";
@@ -1003,7 +1026,6 @@ useEffect(() => {
     if (gender === "Boys" || gender === "Girls") {
       labels = SIZE_CONFIG.KIDS;
     } else if (numericSizeItems.some((keyword) => item.includes(keyword))) {
-
       labels = SIZE_CONFIG.JEANS;
     }
 
@@ -1097,7 +1119,6 @@ useEffect(() => {
 
   return (
     <div className="p-1">
-      <Toaster position="top-right" />
       <div className="flex gap-x-10 pb-4">
         <button
           onClick={() => {
@@ -1123,8 +1144,8 @@ useEffect(() => {
         <div className="h-screen flex flex-col">
           {/* ... inside the !prevAddedItems condition ... */}
           <div className="flex-1 overflow-auto border rounded-md">
-            <table className="min-w-full border-separate border-spacing-0 text-sm">
-              <thead className="bg-gray-100 sticky top-0 z-10 shadow-sm">
+  <table className="min-w-full border-separate border-spacing-0 text-sm">
+              <thead className="bg-gray-100 sticky top-0 z-10 shadow-sm"> {/* Added sticky, top-0, z-index, and a subtle shadow */}
                 <tr>
                   {/* Important: Add 'sticky top-0 bg-gray-100' to each <th> if the parent doesn't behave */}
                   <th className="p-4 border-b text-left sticky top-0">Item Name</th>
@@ -1143,19 +1164,12 @@ useEffect(() => {
                   <th className="bg-purple-100 p-2 border-b sticky top-0">Bulk Qty</th>
 
                   {/* Dynamic sizes */}
-                  {/* Dynamic sizes Header */}
-                  {sizeKeys.map((key, index) => {
-                    // Use the first row to determine what the column header should say
-                    const labels = getLabelsForRow(rows[0]);
-                    const displayLabel = labels[index] || key.toUpperCase();
-
-                    return (
-                      <React.Fragment key={key}>
-                        <th className="p-2 border-b bg-gray-100 sticky top-0">{displayLabel} Price</th>
-                        <th className="p-2 border-b bg-gray-100 sticky top-0">{displayLabel} Qty</th>
-                      </React.Fragment>
-                    );
-                  })}
+                  {sizes.filter(size => size !== 'xs').map((size) => (
+                    <React.Fragment key={size}>
+                      <th className="p-2 border-b bg-gray-100 sticky top-0">{size.toUpperCase()} Price</th>
+                      <th className="p-2 border-b bg-gray-100 sticky top-0">{size.toUpperCase()} Qty</th>
+                    </React.Fragment>
+                  ))}
 
                   <th className="p-4 border-b bg-gray-100 sticky top-0">Barcode</th>
                   <th className="p-4 border-b bg-gray-100 sticky top-0">Actions</th>
@@ -1224,7 +1238,7 @@ useEffect(() => {
 
                         <datalist id={`items-list-${i}`}>
                           {itemsList.map((v) => (
-                            <option key={v._id} value={v.name} />
+                            <option key={v} value={v.name} />
                           ))}
                         </datalist>
                       </div>
@@ -1503,10 +1517,9 @@ useEffect(() => {
                         </div>
 
                         <datalist id={`fits-list-${i}`}>
-                          {/* Look up the categories for this specific row index 'i' */}
-                          {(fitCategoriesByRow[i] || []).map((f: any) => (
+                          {fits.map((f: any) => (
                             <option
-                              key={f._id || f.name}
+                              key={f.id || f.name}
                               value={f.name}
                             />
                           ))}
@@ -1515,7 +1528,7 @@ useEffect(() => {
                     </td>
 
                     {/* Sleeve from local server */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1569,10 +1582,10 @@ useEffect(() => {
                           ))}
                         </datalist>
                       </div>
-                    </td> : <td className="px-5">N/A</td>}
+                    </td>
 
                     {/* Neck from local server */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1626,7 +1639,7 @@ useEffect(() => {
                           ))}
                         </datalist>
                       </div>
-                    </td> : <td className="px-5">N/A</td>}
+                    </td>
 
                     {/* Pattern from Zuget */}
                     <td className="px-4">
@@ -1771,41 +1784,41 @@ useEffect(() => {
                     {/* Sizes (price + qty) */}
                     {/* Inside <tbody> rows.map */}
                     {/* Filter out 'xs' from the row rendering */}
-                    {/* Inside <tbody> rows.map */}
-                    {sizeKeys.map((key, index) => {
-                      const labels = getLabelsForRow(row);
-                      const currentLabel = labels[index] || key.toUpperCase();
+                    {sizes.filter(size => size !== 'xs').map((size) => (
+                      <React.Fragment key={size}>
+                        {/* Price Input */}
+                        <td className="p-1 border">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder={`Price`}
+                            className="w-16 border rounded p-1 text-center"
+                            value={row.sizes[size as keyof Sizes].price || ""}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              updatePrice(i, size as keyof Sizes, val);
+                            }}
+                            disabled={!!row.isSaved}
+                          />
+                        </td>
 
-                      return (
-                        <React.Fragment key={key}>
-                          {/* Price Input */}
-                          <td className="p-1 border text-center">
-                            <span className="text-[10px] text-gray-400 block">{currentLabel}</span>
-                            <input
-                              type="text"
-                              className="w-16 border rounded p-1 text-center"
-                              value={row.sizes[key as keyof Sizes].price || ""}
-                              onChange={(e) => updatePrice(i, key as keyof Sizes, e.target.value.replace(/\D/g, ""))}
-                              disabled={!!row.isSaved}
-                              placeholder='Price'
-                            />
-                          </td>
-
-                          {/* Quantity Input */}
-                          <td className="p-1 border text-center">
-                            <span className="text-[10px] text-gray-400 block">{currentLabel}</span>
-                            <input
-                              type="text"
-                              className="w-12 border rounded p-1 text-center"
-                              value={row.sizes[key as keyof Sizes].quantity || ""}
-                              onChange={(e) => updateQty(i, key as keyof Sizes, e.target.value.replace(/\D/g, ""))}
-                              disabled={!!row.isSaved}
-                              placeholder='Qty'
-                            />
-                          </td>
-                        </React.Fragment>
-                      );
-                    })}
+                        {/* Quantity Input - Arrows Removed */}
+                        <td className="p-1 border">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder={`${size}`}
+                            className="w-12 border rounded p-1 text-center"
+                            value={row.sizes[size as keyof Sizes].quantity || ""}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9]/g, "");
+                              updateQty(i, size as keyof Sizes, val);
+                            }}
+                            disabled={!!row.isSaved}
+                          />
+                        </td>
+                      </React.Fragment>
+                    ))}
 
                     {/* Description */}
                     {/* <td className="px-4">
@@ -1938,5 +1951,3 @@ useEffect(() => {
     </div>
   );
 }
-
-

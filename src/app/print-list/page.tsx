@@ -214,8 +214,8 @@ export default function PrintListPage() {
     <div style="display: flex; flex-direction: column;">
       <div class="store_name">${storeName}</div>
       <div class="barcode-section">
-        <svg class="barcode-svg" data-value="${row.barcode}-${s.size.toUpperCase()}" id="${uniqueId}"></svg>
-        <div class="barcode-number">${row.barcode}-${s.size.toUpperCase()}</div>
+        <svg class="barcode-svg" data-value="${row.barcode}-${row._id}-${s.size.toUpperCase()}" id="${uniqueId}"></svg>
+        <div class="barcode-number">${row.barcode}-${row._id}-${s.size.toUpperCase()}</div>
       </div>
       <div class="brand">${row.brand}</div>
       <div class="specs">
@@ -241,8 +241,8 @@ export default function PrintListPage() {
     document.querySelectorAll('.barcode-svg').forEach(el => {
       JsBarcode(el, el.getAttribute('data-value'), {
         format: "CODE128",
-        width: 2,
-        height: 60,
+        width: 3,
+        height: 80,
         displayValue: false,
         margin: 10,
         background: "#ffffff",
