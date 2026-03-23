@@ -357,31 +357,32 @@ export default function ProductTable() {
       overflow: hidden;
     }
 
-    .portrait-wrapper {
-      transform: rotate(-90deg);
-      /* Changed width/height to fit the rotation properly */
-      width: 46mm;
-      height: 92mm;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 1mm 2mm;
-      box-sizing: border-box;
-      text-transform: uppercase;
-    }
+    /* Change this in your <style> block inside printLabels */
+.portrait-wrapper {
+  transform: rotate(-90deg);
+  width: 48mm;  /* Slightly wider to use more of the 50.8mm width */
+  height: 88mm; /* Reduced from 92mm to prevent cutting off the price */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2mm 4mm; /* Increased side padding (which is top/bottom of label) */
+  box-sizing: border-box;
+  text-transform: uppercase;
+}
 
     .store_name {
-      background: #000 !important;
-      color: #fff !important;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      padding: 2px 4px;
-      font-size: 14px;
-      font-weight: bold;
-      display: inline-block;
-      margin-bottom: 2px;
-      word-break: break-word; /* Wrap long store names */
-    }
+  background: #000 !important;
+  color: #fff !important;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  padding: 2px 6px;
+  font-size: 14px;
+  font-weight: bold;
+  display: inline-block;
+  margin-top: 2mm; /* Pushes away from the left edge */
+  margin-bottom: 2px;
+  word-break: break-word;
+}
 
     .barcode-section { 
     background: #fff; 
@@ -423,13 +424,14 @@ export default function ProductTable() {
     }
 
     .footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      border-top: 1.5px solid #000;
-      padding-top: 2px;
-      margin-top: 2px;
-    }
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1.5px solid #000;
+  padding-top: 2px;
+  margin-top: 2px;
+  margin-bottom: 4mm; /* Pushes the price away from the cutting edge */
+}
 
     .mrp-label { font-size: 8px; font-weight: 700; line-height: 1; }
     .price { font-size: 20px; font-weight: 900; }
@@ -438,24 +440,28 @@ export default function ProductTable() {
 <body>
 `;
 
-    Object.entries(row.sizes).forEach(([size, data]: any) => {
-      if (data.quantity > 0) {
-        for (let i = 0; i < data.quantity; i++) {
-          const uniqueId = `bc_${size}_${i}_${Math.floor(Math.random() * 1000)}`;
+    Object.entries(row.sizes).forEach(([sizeKey, data]: any) => {
+  if (data.quantity > 0) {
+    // Get the correct label (e.g., "28" instead of "xs")
+    const displaySize = getDisplaySize(row, sizeKey); 
+    console.log(row,'0000-----');
+    
+    for (let i = 0; i < data.quantity; i++) {
+      const uniqueId = `bc_${sizeKey}_${i}_${Math.floor(Math.random() * 1000)}`;
 
-          html += `
+      html += `
 <div class="label-container">
   <div class="portrait-wrapper">
     <div style="display: flex; flex-direction: column;">
       <div class="store_name">The Edit Luxury Club</div>
       <div class="barcode-section">
-        <svg class="barcode-svg" data-value="${row.barcode}-${size}" id="${uniqueId}"></svg>
-        <div class="barcode-number">${row.barcode}-${size}</div>
+        <svg class="barcode-svg" data-value="${row.barcode.split('-')[1]}-${displaySize}" id="${uniqueId}"></svg>
+        <div class="barcode-number">${row.barcode}-${displaySize}</div>
       </div>
       <div class="brand">${row.brand}</div>
       <div class="specs">
         <p>ITEM: ${row.item}</p>
-        <p>SIZE: ${size.toUpperCase()}</p>
+        <p>SIZE: ${displaySize}</p>
         <p>COLOR: ${row.color || "N/A"}</p>
         <p>FIT: ${row.fit || "N/A"}</p>
       </div>
