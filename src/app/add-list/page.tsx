@@ -410,7 +410,7 @@ export default function ProductTable() {
     }
    
     .specs {
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 800;
       line-height: 1.8;
       flex-grow: 1; /* Allows specs to take up available space */

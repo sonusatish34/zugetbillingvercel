@@ -47,8 +47,8 @@ export default function PrintListPage() {
     const localUrl = URL.createObjectURL(fileToProcess);
     setEditFormData({
       ...editFormData,
-      [`${field}_file`]: fileToProcess, 
-      [`${field}_preview`]: localUrl    
+      [`${field}_file`]: fileToProcess,
+      [`${field}_preview`]: localUrl
     });
   };
 
@@ -76,11 +76,11 @@ export default function PrintListPage() {
       const res = await fetch(`${API_BASE}/admin/update-product?item_id=${itemId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: token },
-        body: JSON.stringify({ 
-          ...editFormData, 
-          item_image: finalFrontUrl, 
+        body: JSON.stringify({
+          ...editFormData,
+          item_image: finalFrontUrl,
           item_video: finalBackUrl,
-          gender: "Mens" 
+          gender: "Mens"
         }),
       });
 
@@ -93,20 +93,20 @@ export default function PrintListPage() {
   };
 
   const printLabels = (row: any) => {
-  if (!row.barcode) {
-    alert("Please save product first to generate barcode");
-    return;
-  }
+    if (!row.barcode) {
+      alert("Please save product first to generate barcode");
+      return;
+    }
 
-  const win = window.open("", "_blank");
-  if (!win) {
-    alert("Popup blocked! Please allow popups to print labels.");
-    return;
-  }
+    const win = window.open("", "_blank");
+    if (!win) {
+      alert("Popup blocked! Please allow popups to print labels.");
+      return;
+    }
 
-  const storeName = localStorage.getItem("store_name") || "THE EDIT LUXURY CLUB";
+    const storeName = localStorage.getItem("store_name") || "THE EDIT LUXURY CLUB";
 
-  let html = `
+    let html = `
 <html>
 <head>
   <title>Print Labels - ${row.barcode}</title>
@@ -201,14 +201,14 @@ export default function PrintListPage() {
 <body>
 `;
 
-  // Bridging your size_data array to the print loop logic
-  row.size_data.forEach((s: any) => {
-    const qty = Number(s.quantity) || 0;
-    if (qty > 0) {
-      for (let i = 0; i < qty; i++) {
-        const uniqueId = `bc_${s.size}_${i}_${Math.floor(Math.random() * 1000)}`;
+    // Bridging your size_data array to the print loop logic
+    row.size_data.forEach((s: any) => {
+      const qty = Number(s.quantity) || 0;
+      if (qty > 0) {
+        for (let i = 0; i < qty; i++) {
+          const uniqueId = `bc_${s.size}_${i}_${Math.floor(Math.random() * 1000)}`;
 
-        html += `
+          html += `
 <div class="label-container">
   <div class="portrait-wrapper">
     <div style="display: flex; flex-direction: column;">
@@ -231,11 +231,11 @@ export default function PrintListPage() {
     </div>
   </div>
 </div>`;
+        }
       }
-    }
-  });
+    });
 
-  html += `
+    html += `
 <script>
   window.onload = () => {
     document.querySelectorAll('.barcode-svg').forEach(el => {
@@ -259,9 +259,9 @@ export default function PrintListPage() {
 </body>
 </html>`;
 
-  win.document.write(html);
-  win.document.close();
-};
+    win.document.write(html);
+    win.document.close();
+  };
 
   if (loading) return <div className="p-10 text-center text-purple-600 font-bold">Loading Inventory...</div>;
 
@@ -317,28 +317,39 @@ export default function PrintListPage() {
                     </div>
                   </td>
 
-                  {/* SIZES */}
-                  {sizes.filter(s => s !== 'xs').map(s => {
-                    const sObj = (isEditing ? editFormData : item).size_data.find((sd: any) => sd.size.toLowerCase() === s.toLowerCase()) || { price: 0, quantity: 0 };
+                  {(isEditing ? editFormData.size_data : item.size_data).map((sObj: any) => {
                     return (
-                      <td key={s} className="border-x px-1">
+                      <td key={sObj.size} className="border-x px-1">
                         {isEditing ? (
                           <div className="flex flex-col gap-1">
-                            <input type="number" placeholder="Price" className="w-16 border rounded text-[10px] p-1 text-center" value={sObj.price} onChange={(e) => {
+                            <input
+                              type="number"
+                              placeholder="Price"
+                              className="w-16 border rounded text-[10px] p-1 text-center"
+                              value={sObj.price}
+                              onChange={(e) => {
                                 const newData = [...editFormData.size_data];
-                                const idx = newData.findIndex(sd => sd.size.toLowerCase() === s.toLowerCase());
+                                const idx = newData.findIndex(sd => sd.size === sObj.size);
                                 if (idx > -1) newData[idx].price = Number(e.target.value);
-                                setEditFormData({...editFormData, size_data: newData});
-                            }} />
-                            <input type="number" placeholder="Qty" className="w-16 border rounded text-[10px] p-1 text-center bg-yellow-100/50" value={sObj.quantity} onChange={(e) => {
+                                setEditFormData({ ...editFormData, size_data: newData });
+                              }}
+                            />
+                            <input
+                              type="number"
+                              placeholder="Qty"
+                              className="w-16 border rounded text-[10px] p-1 text-center bg-yellow-100/50"
+                              value={sObj.quantity}
+                              onChange={(e) => {
                                 const newData = [...editFormData.size_data];
-                                const idx = newData.findIndex(sd => sd.size.toLowerCase() === s.toLowerCase());
+                                const idx = newData.findIndex(sd => sd.size === sObj.size);
                                 if (idx > -1) newData[idx].quantity = Number(e.target.value);
-                                setEditFormData({...editFormData, size_data: newData});
-                            }} />
+                                setEditFormData({ ...editFormData, size_data: newData });
+                              }}
+                            />
                           </div>
                         ) : (
                           <div>
+                            <div className="text-[10px] text-black font-bold">{sObj.size}</div>
                             <div className="text-[10px] text-gray-400">₹{sObj.price}</div>
                             <div className="font-bold text-gray-700">{sObj.quantity}</div>
                           </div>
@@ -357,7 +368,7 @@ export default function PrintListPage() {
                         </>
                       ) : (
                         <>
-                          <button onClick={() => { setEditingId(item._id); setEditFormData({...item}); }} className="text-blue-500 hover:text-blue-700"><FaEdit /></button>
+                          <button onClick={() => { setEditingId(item._id); setEditFormData({ ...item }); }} className="text-blue-500 hover:text-blue-700"><FaEdit /></button>
                           <button onClick={() => printLabels(item)} className="text-purple-500 hover:text-purple-700"><FaPrint /></button>
                         </>
                       )}
