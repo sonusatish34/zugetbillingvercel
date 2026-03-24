@@ -688,51 +688,51 @@ export default function ProductTable() {
     }
   };
   const addFitCategory = async (index: number, fitValue: string) => {
-  const row = rows[index];
-  const trimmedFit = fitValue.trim();
+    const row = rows[index];
+    const trimmedFit = fitValue.trim();
 
-  if (!row.item || row.item === "Select") {
-    alert("Please select an Item Name first.");
-    return;
-  }
-  if (!trimmedFit) return;
-
-  // Duplicate Check
-  const currentList = fitCategoriesByRow[index] || [];
-  const isDuplicate = currentList.some(
-    (f: any) => f.name?.toLowerCase() === trimmedFit.toLowerCase()
-  );
-
-  if (isDuplicate) {
-    alert(`Fit "${trimmedFit}" already exists for ${row.item}.`);
-    return;
-  }
-
-  try {
-    // API uses POST with query params as per your curl
-    const url = `${API_BASE}/util/add-fit-categories?name=${encodeURIComponent(trimmedFit)}&item_name=${encodeURIComponent(row.item)}`;
-    
-    const res = await fetch(url, {
-      method: "POST", // Changed to POST
-      headers: {
-        accept: "application/json",
-        Authorization: authtoken,
-      },
-      body: "", // Empty body as per -d ''
-    });
-
-    const result = await res.json();
-    if (result.status === "success" || res.ok) {
-      // Refresh the specific Fit list for this row
-      fetchFitCategories(index, row.item);
-      toast.success("Fit added successfully");
-    } else {
-      alert(result.message || "Failed to add fit");
+    if (!row.item || row.item === "Select") {
+      alert("Please select an Item Name first.");
+      return;
     }
-  } catch (error) {
-    console.error("Error adding fit:", error);
-  }
-};
+    if (!trimmedFit) return;
+
+    // Duplicate Check
+    const currentList = fitCategoriesByRow[index] || [];
+    const isDuplicate = currentList.some(
+      (f: any) => f.name?.toLowerCase() === trimmedFit.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      alert(`Fit "${trimmedFit}" already exists for ${row.item}.`);
+      return;
+    }
+
+    try {
+      // API uses POST with query params as per your curl
+      const url = `${API_BASE}/util/add-fit-categories?name=${encodeURIComponent(trimmedFit)}&item_name=${encodeURIComponent(row.item)}`;
+
+      const res = await fetch(url, {
+        method: "POST", // Changed to POST
+        headers: {
+          accept: "application/json",
+          Authorization: authtoken,
+        },
+        body: "", // Empty body as per -d ''
+      });
+
+      const result = await res.json();
+      if (result.status === "success" || res.ok) {
+        // Refresh the specific Fit list for this row
+        fetchFitCategories(index, row.item);
+        toast.success("Fit added successfully");
+      } else {
+        alert(result.message || "Failed to add fit");
+      }
+    } catch (error) {
+      console.error("Error adding fit:", error);
+    }
+  };
 
   const addBrand = async (value: string) => {
     const brand = value.trim();
@@ -938,7 +938,7 @@ export default function ProductTable() {
   const saveRow = async (index: number) => {
     const row = rows[index];
     const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"];
+    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"];
 
     // Check if it's a numeric item
     const isNumericItem = numericSizeItems.some((keyword) => item.includes(keyword));
@@ -1064,7 +1064,7 @@ export default function ProductTable() {
   };
   const getLabelsForRow = (row: ProductRow) => {
     const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"];
+    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"];
 
     if (numericSizeItems.some((keyword) => item.includes(keyword))) {
       return SIZE_CONFIG.JEANS;
@@ -1557,52 +1557,52 @@ export default function ProductTable() {
 
                     {/* Fit from Zuget */}
                     <td className="px-4">
-  <div style={{ position: "relative", width: "160px" }}>
-    <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
-      <input
-        disabled={!!row.isSaved}
-        list={`fits-list-${i}`}
-        placeholder="Fit..."
-        style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
-        value={row.fit}
-        onChange={(e) => updateField(i, "fit", e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            addFitCategory(i, e.currentTarget.value);
-          }
-        }}
-      />
+                      <div style={{ position: "relative", width: "160px" }}>
+                        <div style={{ display: "flex", alignItems: "center", border: "1px solid #ccc", borderRadius: "4px" }}>
+                          <input
+                            disabled={!!row.isSaved}
+                            list={`fits-list-${i}`}
+                            placeholder="Fit..."
+                            style={{ border: "none", padding: "5px", flex: 1, outline: "none", width: "100%" }}
+                            value={row.fit}
+                            onChange={(e) => updateField(i, "fit", e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                addFitCategory(i, e.currentTarget.value);
+                              }
+                            }}
+                          />
 
-      <button
-        onClick={(e) => {
-          const input = e.currentTarget.previousSibling as HTMLInputElement;
-          addFitCategory(i, input.value);
-        }}
-        style={{
-          border: "none",
-          background: "purple",
-          color: "white",
-          cursor: "pointer",
-          padding: "2px 8px",
-          fontSize: "18px",
-        }}
-        className="rounded-md"
-        title="Add new fit"
-      >
-        +
-      </button>
-    </div>
+                          <button
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousSibling as HTMLInputElement;
+                              addFitCategory(i, input.value);
+                            }}
+                            style={{
+                              border: "none",
+                              background: "purple",
+                              color: "white",
+                              cursor: "pointer",
+                              padding: "2px 8px",
+                              fontSize: "18px",
+                            }}
+                            className="rounded-md"
+                            title="Add new fit"
+                          >
+                            +
+                          </button>
+                        </div>
 
-    <datalist id={`fits-list-${i}`}>
-      {(fitCategoriesByRow[i] || []).map((f: any) => (
-        <option key={f._id || f.name} value={f.name} />
-      ))}
-    </datalist>
-  </div>
-</td>
+                        <datalist id={`fits-list-${i}`}>
+                          {(fitCategoriesByRow[i] || []).map((f: any) => (
+                            <option key={f._id || f.name} value={f.name} />
+                          ))}
+                        </datalist>
+                      </div>
+                    </td>
 
                     {/* Sleeve from local server */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1659,7 +1659,7 @@ export default function ProductTable() {
                     </td> : <td className="px-5">N/A</td>}
 
                     {/* Neck from local server */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1716,7 +1716,7 @@ export default function ProductTable() {
                     </td> : <td className="px-5">N/A</td>}
 
                     {/* Pattern from Zuget */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
