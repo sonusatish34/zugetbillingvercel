@@ -60,18 +60,9 @@ type SizeInfo = {
 };
 
 type Sizes = {
-  xs: SizeInfo;
-  s: SizeInfo;
-  m: SizeInfo;
-  l: SizeInfo;
-  xl: SizeInfo;
-  xxl: SizeInfo;
-  xxxl: SizeInfo;
-  xxxxl: SizeInfo;
-  // Add these three:
-  sz9: SizeInfo;
-  sz10: SizeInfo;
-  sz11: SizeInfo;
+  xs: SizeInfo; s: SizeInfo; m: SizeInfo; l: SizeInfo; xl: SizeInfo;
+  xxl: SizeInfo; xxxl: SizeInfo; xxxxl: SizeInfo;
+  sz9: SizeInfo; sz10: SizeInfo; sz11: SizeInfo;
 };
 
 type ProductRow = {
@@ -938,7 +929,7 @@ export default function ProductTable() {
   const saveRow = async (index: number) => {
     const row = rows[index];
     const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"];
+    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "cargo pants", "formal pants", "cotton trouser"];
 
     // Check if it's a numeric item
     const isNumericItem = numericSizeItems.some((keyword) => item.includes(keyword));
@@ -984,18 +975,22 @@ export default function ProductTable() {
       if (row.frontImage) imageUrl = await uploadToS3(row.frontImage);
       if (row.backImage) videoUrl = await uploadToS3(row.backImage);
 
-      const size_data = sizeKeys.map((key) => {
-        const v = row.sizes[key as keyof Sizes];
-        const labels = getLabelsForRow(row);
-        const index = sizeKeys.indexOf(key);
+      const size_data = sizeKeys
+        .map((key, index) => {
+          const v = row.sizes[key as keyof Sizes];
+          const labels = getLabelsForRow(row);
 
-        return {
-          // This sends "28" or "M" to your database instead of "s" or "m"
-          size: labels[index] || key.toUpperCase(),
-          price: (Number(v.price) || 0),
-          quantity: (Number(v.quantity) || 0),
-        };
-      });
+          // If there is no label for this index (e.g., index 8 for a Shirt), 
+          // it returns null so we can filter it out.
+          if (!labels[index]) return null;
+
+          return {
+            size: labels[index],
+            price: Number(v.price) || 0,
+            quantity: Number(v.quantity) || 0,
+          };
+        })
+        .filter((item) => item !== null); // This removes sz9-sz11 for shirts
 
       const body = {
         app_user_id: Number(localStorage.getItem("app_user_id")),
@@ -1056,15 +1051,14 @@ export default function ProductTable() {
   // Update these two arrays found near the bottom of your helper functions
   const sizes = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl", "sz9", "sz10", "sz11"];
   const sizeKeys = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl", "sz9", "sz10", "sz11"];
-
   const SIZE_CONFIG = {
     KIDS: ["0-3M", "3-6M", "6-12M", "1-2Y", "2-3Y", "3-4Y", "4-5Y", "5-6Y"],
-    JEANS: ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48"],
-    SHIRTS: ["S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"],
+    JEANS: ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48"], // 11 sizes
+    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL"], // 8 sizes
   };
   const getLabelsForRow = (row: ProductRow) => {
     const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"];
+    const numericSizeItems = ["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "cargo pants", "formal pants", "cotton trouser", "chinos", "cotton trouser"];
 
     if (numericSizeItems.some((keyword) => item.includes(keyword))) {
       return SIZE_CONFIG.JEANS;
@@ -1090,7 +1084,6 @@ export default function ProductTable() {
       "pyjamas",
       "sportswear",
       "swimwear",
-      "pant",
     ];
 
     let labels = SIZE_CONFIG.SHIRTS;
@@ -1240,14 +1233,15 @@ export default function ProductTable() {
                   {/* Dynamic sizes */}
                   {/* Dynamic sizes Header */}
                   {sizeKeys.map((key, index) => {
-                    // Use the first row to determine what the column header should say
+                    // We show all 11 headers because the table needs a consistent structure,
+                    // but we can dim or label them "N/A" if the first row isn't a numeric item.
                     const labels = getLabelsForRow(rows[0]);
-                    const displayLabel = labels[index] || key.toUpperCase();
+                    const displayLabel = labels[index] || "—";
 
                     return (
                       <React.Fragment key={key}>
-                        <th className="p-2 border-b bg-gray-100 sticky top-0">{displayLabel} Price</th>
-                        <th className="p-2 border-b bg-gray-100 sticky top-0">{displayLabel} Qty</th>
+                        <th className="p-2 border-b bg-gray-100">{displayLabel} Price</th>
+                        <th className="p-2 border-b bg-gray-100">{displayLabel} Qty</th>
                       </React.Fragment>
                     );
                   })}
@@ -1602,7 +1596,7 @@ export default function ProductTable() {
                     </td>
 
                     {/* Sleeve from local server */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "cargo pants", "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1659,7 +1653,7 @@ export default function ProductTable() {
                     </td> : <td className="px-5">N/A</td>}
 
                     {/* Neck from local server */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "cargo pants", "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1716,7 +1710,7 @@ export default function ProductTable() {
                     </td> : <td className="px-5">N/A</td>}
 
                     {/* Pattern from Zuget */}
-                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "pant","cotton trouser"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "shorts", "trousers", "cargo", "joggers", "chinos", "cargo pants", "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1861,13 +1855,23 @@ export default function ProductTable() {
                     {/* Inside <tbody> rows.map */}
                     {sizeKeys.map((key, index) => {
                       const labels = getLabelsForRow(row);
-                      const currentLabel = labels[index] || key.toUpperCase();
+                      const currentLabel = labels[index];
+
+                      // If this specific row doesn't have a size for this column, show "N/A"
+                      if (!currentLabel) {
+                        return (
+                          <React.Fragment key={key}>
+                            <td className="p-1 border bg-gray-50 text-gray-400 text-center">-</td>
+                            <td className="p-1 border bg-gray-50 text-gray-400 text-center">-</td>
+                          </React.Fragment>
+                        );
+                      }
 
                       return (
                         <React.Fragment key={key}>
                           {/* Price Input */}
                           <td className="p-1 border text-center">
-                            <span className="text-[10px] text-gray-400 block">{currentLabel}</span>
+                            <span className="text-[10px] font-bold text-black block">{currentLabel}</span>
                             <input
                               type="text"
                               className="w-16 border rounded p-1 text-center"
