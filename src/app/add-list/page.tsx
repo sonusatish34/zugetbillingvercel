@@ -1884,7 +1884,7 @@ export default function ProductTable() {
 
                           {/* Quantity Input */}
                           <td className="p-1 border text-center">
-                            <span className="text-[10px] text-gray-400 block">{currentLabel}</span>
+                            <span className="text-[10px] font-bold text-black block">{currentLabel}</span>
                             <input
                               type="text"
                               className="w-12 border rounded p-1 text-center"
