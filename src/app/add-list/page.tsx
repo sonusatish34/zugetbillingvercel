@@ -1054,7 +1054,7 @@ export default function ProductTable() {
   const SIZE_CONFIG = {
     KIDS: ["0-3M", "3-6M", "6-12M", "1-2Y", "2-3Y", "3-4Y", "4-5Y", "5-6Y"],
     JEANS: ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48"], // 11 sizes
-    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL"], // 8 sizes
+    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL","5xl"], // 8 sizes
   };
   const getLabelsForRow = (row: ProductRow) => {
     const item = row.item?.toLowerCase() || "";
