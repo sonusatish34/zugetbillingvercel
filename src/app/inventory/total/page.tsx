@@ -16,13 +16,13 @@ export default function PrintListPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   // --- PRINT MODAL STATE ---
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printingItem, setPrintingItem] = useState<any>(null);
   const [printSelections, setPrintSelections] = useState<any[]>([]);
 
-const [showImg, setShowImg] = useState("");
+  const [showImg, setShowImg] = useState("");
   const getAuthToken = () => {
     if (typeof window === "undefined") return "";
     const phone = localStorage.getItem("user_phone") || "";
@@ -223,8 +223,9 @@ const [showImg, setShowImg] = useState("");
                     <div key={idx} className="relative w-16 h-16 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100">
                       <img
                         src={(isEditing ? (idx === 0 ? (editFormData.front_preview || item.item_image) : (editFormData.back_preview || item.item_video)) : img) || ""}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover cursor-zoom-in"
                         alt="item"
+                        onClick={() => setPreviewImage((isEditing ? (idx === 0 ? (editFormData.front_preview || item.item_image) : (editFormData.back_preview || item.item_video)) : img))}
                       />
                       {isEditing && (
                         <label className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
@@ -323,11 +324,11 @@ const [showImg, setShowImg] = useState("");
               </div>
               <button onClick={() => setIsPrintModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><FaTimes /></button>
             </div>
-            
+
             <div className="p-4 max-h-[50vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4 px-2">
                 <span className="text-xs font-bold text-gray-400">SELECT SIZE & QTY</span>
-                <button 
+                <button
                   onClick={() => {
                     const allSelected = printSelections.every(s => s.selected);
                     setPrintSelections(printSelections.map(s => ({ ...s, selected: !allSelected })));
@@ -341,7 +342,7 @@ const [showImg, setShowImg] = useState("");
               <div className="space-y-2">
                 {printSelections.map((s, idx) => (
                   <div key={idx} className={`flex items-center gap-4 p-3 border rounded-xl transition-colors ${s.selected ? 'border-blue-500 bg-blue-50/50' : 'border-gray-100'}`}>
-                    <button 
+                    <button
                       onClick={() => {
                         const next = [...printSelections];
                         next[idx].selected = !next[idx].selected;
@@ -349,9 +350,9 @@ const [showImg, setShowImg] = useState("");
                       }}
                       className={s.selected ? "text-blue-600" : "text-gray-300"}
                     >
-                      {s.selected ? <FaCheckSquare size={20}/> : <FaSquare size={20}/>}
+                      {s.selected ? <FaCheckSquare size={20} /> : <FaSquare size={20} />}
                     </button>
-                    
+
                     <div className="flex-1">
                       <p className="font-black text-sm text-gray-800">{s.size}</p>
                       <p className="text-[10px] text-gray-500">Price: ₹{s.price}</p>
@@ -359,9 +360,9 @@ const [showImg, setShowImg] = useState("");
 
                     <div className="flex flex-col items-end gap-1">
                       <span className="text-[9px] font-bold text-gray-400">PRINT QTY</span>
-                      <input 
-                        type="number" 
-                        value={s.printQty} 
+                      <input
+                        type="number"
+                        value={s.printQty}
                         onChange={(e) => {
                           const next = [...printSelections];
                           next[idx].printQty = Math.max(0, Number(e.target.value));
@@ -377,8 +378,8 @@ const [showImg, setShowImg] = useState("");
 
             <div className="p-4 border-t bg-gray-50 flex gap-3">
               <button onClick={() => setIsPrintModalOpen(false)} className="flex-1 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-              <button 
-                onClick={executePrint} 
+              <button
+                onClick={executePrint}
                 className="flex-[2] py-3 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-transform active:scale-95"
               >
                 <FaPrint /> Print {printSelections.filter(s => s.selected).reduce((acc, curr) => acc + curr.printQty, 0)} Labels
@@ -394,6 +395,22 @@ const [showImg, setShowImg] = useState("");
           <p className="text-gray-500 font-medium">No items found matching your search.</p>
         </div>
       )}
+      {/* --- IMAGE PREVIEW MODAL --- */}
+{previewImage && (
+  <div 
+    className="fixed inset-0 bg-black/90 z-[10000] flex items-center justify-center p-4 cursor-zoom-out"
+    onClick={() => setPreviewImage(null)}
+  >
+    <button className="absolute top-6 right-6 text-white text-2xl">
+      <FaTimes />
+    </button>
+    <img 
+      src={previewImage} 
+      className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-in zoom-in duration-200" 
+      alt="Full Preview" 
+    />
+  </div>
+)}
     </div>
   );
 }
