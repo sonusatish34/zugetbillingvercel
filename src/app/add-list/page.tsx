@@ -69,6 +69,7 @@ type ProductRow = {
   id: string;
   item: string;
   brand: string;
+  sizeMode: "AUTO" | "ALPHA" | "NUMERIC";
   category: string;
   gender: string;
   color: string;
@@ -276,6 +277,7 @@ export default function ProductTable() {
     const newRow: ProductRow = {
       id: uuidv4(),
       item: row.item,
+      sizeMode: 'AUTO',
       brand: row.brand,
       category: "Mens Clothing",
       item_category: row.item_category,
@@ -547,6 +549,7 @@ export default function ProductTable() {
     id: uuidv4(),
     item: "",
     brand: "",
+    sizeMode: "AUTO", // Default value
     category: "",
     gender: "Mens",
     color: "",
@@ -929,7 +932,7 @@ export default function ProductTable() {
   const saveRow = async (index: number) => {
     const row = rows[index];
     const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "shorts"];
+    const numericSizeItems = ["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser"];
 
     // Check if it's a numeric item
     const isNumericItem = numericSizeItems.some((keyword) => item.includes(keyword));
@@ -979,13 +982,14 @@ export default function ProductTable() {
         .map((key, index) => {
           const v = row.sizes[key as keyof Sizes];
           const labels = getLabelsForRow(row);
+          const currentLabels = getLabelsForRow(row);
 
           // If there is no label for this index (e.g., index 8 for a Shirt), 
           // it returns null so we can filter it out.
-          if (!labels[index]) return null;
+          if (!currentLabels[index]) return null;
 
           return {
-            size: labels[index],
+            size: currentLabels[index],
             price: Number(v.price) || 0,
             quantity: Number(v.quantity) || 0,
           };
@@ -1054,46 +1058,26 @@ export default function ProductTable() {
   const SIZE_CONFIG = {
     KIDS: ["0-3M", "3-6M", "6-12M", "1-2Y", "2-3Y", "3-4Y", "4-5Y", "5-6Y"],
     JEANS: ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48"], // 11 sizes
-    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5xl"], // 8 sizes
+    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"], // 8 sizes
   };
   const getLabelsForRow = (row: ProductRow) => {
-    const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "chinos", "cotton trouser", "shorts"];
+    // 1. Manual Overrides
+    if (row.sizeMode === "NUMERIC") return SIZE_CONFIG.JEANS;
+    if (row.sizeMode === "ALPHA") return SIZE_CONFIG.SHIRTS;
 
-    if (numericSizeItems.some((keyword) => item.includes(keyword))) {
+    // 2. AUTO Logic (Detect based on item name)
+    const item = row.item?.toLowerCase() || "";
+    const numericKeywords = ["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "pant", "shorts"];
+
+    if (numericKeywords.some((keyword) => item.includes(keyword))) {
       return SIZE_CONFIG.JEANS;
     }
     return SIZE_CONFIG.SHIRTS;
   };
 
   const getDisplaySize = (row: ProductRow, sizeKey: string) => {
-    const index = [
-      "xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl", "sz9", "sz10", "sz11"
-    ].indexOf(sizeKey);
-    const gender = row.gender?.toLowerCase();
-    const item = row.item?.toLowerCase() || "";
-
-    const numericSizeItems = [
-      "jeans",
-      "trousers",
-      "joggers",
-      "chinos",
-      "tracksuit",
-      "pyjamas",
-      "sportswear",
-      "swimwear",
-      "shorts",
-    ];
-
-    let labels = SIZE_CONFIG.SHIRTS;
-
-    if (gender === "Boys" || gender === "Girls") {
-      labels = SIZE_CONFIG.KIDS;
-    } else if (numericSizeItems.some((keyword) => item.includes(keyword))) {
-
-      labels = SIZE_CONFIG.JEANS;
-    }
-
+    const index = sizeKeys.indexOf(sizeKey);
+    const labels = row.sizeMode === "NUMERIC" ? SIZE_CONFIG.JEANS : SIZE_CONFIG.SHIRTS;
     return labels[index] || sizeKey.toUpperCase();
   };
 
@@ -1846,6 +1830,19 @@ export default function ProductTable() {
                           applyBulkQty(i, Number(val));
                         }}
                       />
+                    </td>
+                    {/* Inside your row mapping <tbody> */}
+                    <td className="px-4">
+                      <select
+                        value={row.sizeMode} // Changed from sizeType
+                        disabled={row.isSaved}
+                        className="border rounded p-1 text-xs bg-white"
+                        onChange={(e) => updateField(i, "sizeMode", e.target.value)} // Changed from sizeType
+                      >
+                        <option value="AUTO">Auto (Detect)</option>
+                        <option value="ALPHA">Alpha (S/M/L)</option>
+                        <option value="NUMERIC">Numeric (28/30)</option>
+                      </select>
                     </td>
 
                     {/* Sizes (price + qty) */}
