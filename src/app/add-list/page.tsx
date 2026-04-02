@@ -979,22 +979,19 @@ export default function ProductTable() {
       if (row.backImage) videoUrl = await uploadToS3(row.backImage);
 
       const size_data = sizeKeys
-        .map((key, index) => {
+        .map((key, idx) => {
           const v = row.sizes[key as keyof Sizes];
-          const labels = getLabelsForRow(row);
-          const currentLabels = getLabelsForRow(row);
+          const labels = getLabelsForRow(row); // Use labels for the specific row being saved
 
-          // If there is no label for this index (e.g., index 8 for a Shirt), 
-          // it returns null so we can filter it out.
-          if (!currentLabels[index]) return null;
+          if (!labels[idx]) return null;
 
           return {
-            size: currentLabels[index],
+            size: labels[idx], // This ensures '28' matches index 0, 'S' matches index 0, etc.
             price: Number(v.price) || 0,
             quantity: Number(v.quantity) || 0,
           };
         })
-        .filter((item) => item !== null); // This removes sz9-sz11 for shirts
+        .filter((item) => item !== null);
 
       const body = {
         app_user_id: Number(localStorage.getItem("app_user_id")),
@@ -1056,20 +1053,21 @@ export default function ProductTable() {
   const sizes = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl", "sz9", "sz10", "sz11"];
   const sizeKeys = ["xs", "s", "m", "l", "xl", "xxl", "xxxl", "xxxxl", "sz9", "sz10", "sz11"];
   const SIZE_CONFIG = {
-    KIDS: ["0-3M", "3-6M", "6-12M", "1-2Y", "2-3Y", "3-4Y", "4-5Y", "5-6Y"],
-    JEANS: ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48"], // 11 sizes
-    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"], // 8 sizes
+    KIDS: ["0-3M", "3-6M", "6-12M", "1-2Y", "2-3Y", "3-4Y", "4-5Y", "5-6Y", "6-7Y", "7-8Y", "8-9Y"],
+    JEANS: ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48"],
+    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL", "6XL", "7XL"],
   };
+
   const getLabelsForRow = (row: ProductRow) => {
-    // 1. Manual Overrides
+    // Priority 1: User Selection
     if (row.sizeMode === "NUMERIC") return SIZE_CONFIG.JEANS;
     if (row.sizeMode === "ALPHA") return SIZE_CONFIG.SHIRTS;
 
-    // 2. AUTO Logic (Detect based on item name)
+    // Priority 2: Auto Detection
     const item = row.item?.toLowerCase() || "";
     const numericKeywords = ["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "pant", "shorts"];
 
-    if (numericKeywords.some((keyword) => item.includes(keyword))) {
+    if (numericKeywords.some(k => item.includes(k))) {
       return SIZE_CONFIG.JEANS;
     }
     return SIZE_CONFIG.SHIRTS;
@@ -1212,19 +1210,20 @@ export default function ProductTable() {
                   {/* Bulk sections */}
                   <th className="bg-purple-100 p-2 border-b sticky top-0">Bulk Price</th>
                   <th className="bg-purple-100 p-2 border-b sticky top-0">Bulk Qty</th>
+                  <th className="bg-purple-100 p-2 border-b sticky top-0">Custom Size</th>
 
                   {/* Dynamic sizes */}
                   {/* Dynamic sizes Header */}
+                  {/* Replace your current sizeKeys.map in the <thead> */}
                   {sizeKeys.map((key, index) => {
-                    // We show all 11 headers because the table needs a consistent structure,
-                    // but we can dim or label them "N/A" if the first row isn't a numeric item.
+                    // Use a stable reference for headers - or base it on the first row
                     const labels = getLabelsForRow(rows[0]);
                     const displayLabel = labels[index] || "—";
 
                     return (
                       <React.Fragment key={key}>
-                        <th className="p-2 border-b bg-gray-100">{displayLabel} Price</th>
-                        <th className="p-2 border-b bg-gray-100">{displayLabel} Qty</th>
+                        <th className="p-2 border-b bg-gray-100 text-purple-700">{displayLabel} Price</th>
+                        <th className="p-2 border-b bg-gray-100 text-purple-700">{displayLabel} Qty</th>
                       </React.Fragment>
                     );
                   })}
@@ -1834,12 +1833,12 @@ export default function ProductTable() {
                     {/* Inside your row mapping <tbody> */}
                     <td className="px-4">
                       <select
-                        value={row.sizeMode} // Changed from sizeType
+                        value={row.sizeMode}
                         disabled={row.isSaved}
-                        className="border rounded p-1 text-xs bg-white"
-                        onChange={(e) => updateField(i, "sizeMode", e.target.value)} // Changed from sizeType
+                        className="border rounded p-1 text-xs"
+                        onChange={(e) => updateField(i, "sizeMode", e.target.value)} // MUST match 'sizeMode'
                       >
-                        <option value="AUTO">Auto (Detect)</option>
+                        <option value="AUTO">Auto Detect</option>
                         <option value="ALPHA">Alpha (S/M/L)</option>
                         <option value="NUMERIC">Numeric (28/30)</option>
                       </select>
@@ -1849,45 +1848,51 @@ export default function ProductTable() {
                     {/* Inside <tbody> rows.map */}
                     {/* Filter out 'xs' from the row rendering */}
                     {/* Inside <tbody> rows.map */}
+                    {/* Inside rows.map((row, i) => ... */}
+                    {/* Replace the sizeKeys.map inside your <tbody> rows.map */}
                     {sizeKeys.map((key, index) => {
-                      const labels = getLabelsForRow(row);
-                      const currentLabel = labels[index];
+                      const currentLabels = getLabelsForRow(row);
+                      const currentLabel = currentLabels[index];
 
-                      // If this specific row doesn't have a size for this column, show "N/A"
+                      // If this column index isn't needed for this size mode, disable it
                       if (!currentLabel) {
                         return (
                           <React.Fragment key={key}>
-                            <td className="p-1 border bg-gray-50 text-gray-400 text-center">-</td>
-                            <td className="p-1 border bg-gray-50 text-gray-400 text-center">-</td>
+                            <td className="p-1 border bg-gray-50 text-center text-gray-400">-</td>
+                            <td className="p-1 border bg-gray-50 text-center text-gray-400">-</td>
                           </React.Fragment>
                         );
                       }
 
                       return (
                         <React.Fragment key={key}>
-                          {/* Price Input */}
-                          <td className="p-1 border text-center">
-                            <span className="text-[10px] font-bold text-black block">{currentLabel}</span>
+                          {/* Price Input Cell */}
+                          <td className="p-1 border text-center min-w-[80px]">
+                            <span className="text-[9px] font-bold text-purple-500 uppercase block leading-none mb-1">
+                              {currentLabel}
+                            </span>
                             <input
                               type="text"
-                              className="w-16 border rounded p-1 text-center"
+                              className="w-16 border rounded p-1 text-center text-xs"
                               value={row.sizes[key as keyof Sizes].price || ""}
                               onChange={(e) => updatePrice(i, key as keyof Sizes, e.target.value.replace(/\D/g, ""))}
                               disabled={!!row.isSaved}
-                              placeholder='Price'
+                              placeholder="Price"
                             />
                           </td>
 
-                          {/* Quantity Input */}
-                          <td className="p-1 border text-center">
-                            <span className="text-[10px] font-bold text-black block">{currentLabel}</span>
+                          {/* Quantity Input Cell */}
+                          <td className="p-1 border text-center min-w-[60px]">
+                            <span className="text-[9px] font-bold text-purple-500 uppercase block leading-none mb-1">
+                              {currentLabel}
+                            </span>
                             <input
                               type="text"
-                              className="w-12 border rounded p-1 text-center"
+                              className="w-12 border rounded p-1 text-center text-xs"
                               value={row.sizes[key as keyof Sizes].quantity || ""}
                               onChange={(e) => updateQty(i, key as keyof Sizes, e.target.value.replace(/\D/g, ""))}
                               disabled={!!row.isSaved}
-                              placeholder='Qty'
+                              placeholder="Qty"
                             />
                           </td>
                         </React.Fragment>
