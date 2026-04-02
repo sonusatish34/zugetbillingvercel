@@ -396,21 +396,21 @@ export default function PrintListPage() {
         </div>
       )}
       {/* --- IMAGE PREVIEW MODAL --- */}
-{previewImage && (
-  <div 
-    className="fixed inset-0 bg-black/90 z-[10000] flex items-center justify-center p-4 cursor-zoom-out"
-    onClick={() => setPreviewImage(null)}
-  >
-    <button className="absolute top-6 right-6 text-white text-2xl">
-      <FaTimes />
-    </button>
-    <img 
-      src={previewImage} 
-      className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-in zoom-in duration-200" 
-      alt="Full Preview" 
-    />
-  </div>
-)}
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black/90 z-[10000] flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button className="absolute top-6 right-6 text-white text-2xl">
+            <FaTimes />
+          </button>
+          <img
+            src={previewImage}
+            className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-in zoom-in duration-200"
+            alt="Full Preview"
+          />
+        </div>
+      )}
     </div>
   );
 }

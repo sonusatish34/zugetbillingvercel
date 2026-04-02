@@ -929,7 +929,7 @@ export default function ProductTable() {
   const saveRow = async (index: number) => {
     const row = rows[index];
     const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans",  "trousers",  "joggers", "chinos", "formal pants", "cotton trouser"];
+    const numericSizeItems = ["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "shorts"];
 
     // Check if it's a numeric item
     const isNumericItem = numericSizeItems.some((keyword) => item.includes(keyword));
@@ -1054,11 +1054,11 @@ export default function ProductTable() {
   const SIZE_CONFIG = {
     KIDS: ["0-3M", "3-6M", "6-12M", "1-2Y", "2-3Y", "3-4Y", "4-5Y", "5-6Y"],
     JEANS: ["28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48"], // 11 sizes
-    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL","5xl"], // 8 sizes
+    SHIRTS: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5xl"], // 8 sizes
   };
   const getLabelsForRow = (row: ProductRow) => {
     const item = row.item?.toLowerCase() || "";
-    const numericSizeItems = ["jeans",  "trousers",  "joggers", "chinos", "formal pants", "cotton trouser", "chinos", "cotton trouser"];
+    const numericSizeItems = ["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "chinos", "cotton trouser", "shorts"];
 
     if (numericSizeItems.some((keyword) => item.includes(keyword))) {
       return SIZE_CONFIG.JEANS;
@@ -1082,6 +1082,7 @@ export default function ProductTable() {
       "pyjamas",
       "sportswear",
       "swimwear",
+      "shorts",
     ];
 
     let labels = SIZE_CONFIG.SHIRTS;
@@ -1594,7 +1595,7 @@ export default function ProductTable() {
                     </td>
 
                     {/* Sleeve from local server */}
-                    {!["jeans",  "trousers", "joggers", "chinos",  "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant","shorts"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant", "shorts"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1651,7 +1652,7 @@ export default function ProductTable() {
                     </td> : <td className="px-5">N/A</td>}
 
                     {/* Neck from local server */}
-                    {!["jeans",  "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant","shorts"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant", "shorts"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
@@ -1708,7 +1709,7 @@ export default function ProductTable() {
                     </td> : <td className="px-5">N/A</td>}
 
                     {/* Pattern from Zuget */}
-                    {!["jeans",  "trousers", "joggers", "chinos",  "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant","shorts"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
+                    {!["jeans", "trousers", "joggers", "chinos", "formal pants", "cotton trouser", "chinos", "cotton trouser", "pant", "shorts"].some(k => row.item.toLowerCase().includes(k)) ? <td className="px-4">
                       <div style={{ position: "relative", width: "180px" }}>
                         <div
                           style={{
