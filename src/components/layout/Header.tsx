@@ -30,6 +30,12 @@ const getPageInfo = (pathname: string) => {
       breadcrumbs: ['Home', 'Billing System'],
     };
   }
+  if (pathname === '/discounts') {
+    return {
+      title: 'discounts',
+      breadcrumbs: ['Home', 'discounts'],
+    };
+  }
 
   // Search through all menu items
   const allMenuItems = [

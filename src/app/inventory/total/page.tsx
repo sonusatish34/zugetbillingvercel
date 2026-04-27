@@ -222,7 +222,7 @@ export default function PrintListPage() {
                   {[item.item_image, item.item_video].map((img, idx) => (
                     <div key={idx} className="relative w-16 h-16 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100">
                       <img
-                        src={(isEditing ? (idx === 0 ? (editFormData.front_preview || item.item_image) : (editFormData.back_preview || item.item_video)) : img) || ""}
+                        src={(isEditing ? (idx === 0 ? (editFormData.front_preview || item.item_image) : (editFormData.back_preview || item.item_video)) : img) || null}
                         className="w-full h-full object-cover cursor-zoom-in"
                         alt="item"
                         onClick={() => setPreviewImage((isEditing ? (idx === 0 ? (editFormData.front_preview || item.item_image) : (editFormData.back_preview || item.item_video)) : img))}
