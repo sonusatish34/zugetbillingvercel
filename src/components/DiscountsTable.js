@@ -66,7 +66,7 @@ export default function DiscountsCards({ discounts, onUpdateStatus, onUpdateDisc
                                 <div className="flex justify-between items-center pt-2">
                                     <span className="text-purple-600 font-semibold text-sm">value : {d.discount}</span>
                                     {d.image_link && (
-                                        <button className="text-xs text-gray-500 underline hover:text-purple-600">View Image</button>
+                                        <a target="_blank" href={d.image_link} className="text-xs text-gray-500 underline hover:text-purple-600"><Image alt="view image" src={d.image_link} width={50} height={50}/></a>
                                     )}
                                 </div>
                             </div>

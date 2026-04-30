@@ -25,7 +25,7 @@
         },
         {
           protocol: 'https',
-          hostname: 'longdrivecarsnew-lime.vercel.app',
+          hostname: 'cdn.techjockey.com',
         },
         {
           protocol: 'http',

@@ -34,7 +34,7 @@ export default function DiscountsPage() {
         } catch (error) { setActiveDiscounts([]); }
     };
 
-    // useEffect(() => { if (tokenAuth) fetchDiscountsStatus('active'); }, [tokenAuth]);
+    useEffect(() => { if (tokenAuth) fetchDiscountsStatus('active'); }, [tokenAuth]);
 
     const handleUpdateStatus = (id, newStatus) => {
         axios.put(`${BASE_URL}/update-discount-status`, {
@@ -99,7 +99,7 @@ export default function DiscountsPage() {
             </div>
 
             {/* Component 2: List of Discounts */}
-            {/* <DiscountsTable
+            <DiscountsTable
                 discounts={activeDiscounts}
                 loading={loading}
                 onUpdateStatus={handleUpdateStatus}
@@ -111,7 +111,7 @@ export default function DiscountsPage() {
                 app_user_id={APP_USER_ID}
                 store_id={STORE_ID}
                 availableDiscounts={activeDiscounts} // Passes current fetched discounts
-            /> */}
+            />
         </div>
 
     );
