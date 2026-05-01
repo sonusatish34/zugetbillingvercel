@@ -27,7 +27,9 @@ import {
   User,
   LogOut,
   Upload,
-  DatabaseZapIcon
+  DatabaseZapIcon,
+  BadgeIndianRupee,
+
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SIDEBAR_MENU } from '@/lib/constants';
@@ -47,6 +49,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   '/orders/replaced': RefreshCw,
   '/inventory/total': Package,
   '/inventory/upload': Upload,
+  '/discounts': BadgeIndianRupee,
   '/inventory/ziptocsv': DatabaseZapIcon,
   '/inventory/low-quantity': AlertTriangle,
   '/inventory/add': PlusCircle,

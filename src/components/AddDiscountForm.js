@@ -1,71 +1,60 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { PlusCircle, ChevronDown, Image as ImageIcon, Loader2 } from "lucide-react";
+import { PlusCircle, Image as ImageIcon, Loader2 } from "lucide-react";
 import Swal from "sweetalert2";
 import Select from 'react-select';
+
+const CATEGORIES = ["Price Based", "Bundle", "Cashback", "Loyalty", "Item Gift"];
+const DISCOUNT_OPTIONS = {
+    "Price Based": ["Percentage", "Flat"],
+    "Cashback": ["Cashback", "Tiered"],
+    "Bundle": ["Buy X Get Y", "Combo"],
+    "Loyalty": ["Loyalty"],
+    "Item Gift": ["Item Gift"]
+};
+
 export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSuccess }) {
     const [loading, setLoading] = useState(false);
-    const fileInputRef = useRef(null);
     const [itemList, setItemList] = useState([]);
-
-    const categories = ["Price Based", "Bundle", "Cashback", "Loyalty", "Item Gift"];
-    const discountOptions = {
-        "Price Based": ["Percentage", "Flat"],
-        "Cashback": ["Cashback", "Tiered"],
-        "Bundle": ["Buy X Get Y", "Combo"],
-        "Loyalty": ["Loyalty"],
-        "Item Gift": ["Item Gift"]
-    };
-
     const [activeCategory, setActiveCategory] = useState("Price Based");
+    const fileInputRef = useRef(null);
 
     const [createForm, setCreateForm] = useState({
-        offer_name: "",
-        offer_on: "All Items",
-        gender: "all",
-        discount_type: "Percentage",
-        min_order_value: "",
-        discount: "",
-        min_order_value_type: "",
-        buy_x: "1",
-        buy_y: "1",
-        item_1_offer_on: "All Items",
-        buy_item_1: "",
-        item_2_offer_on: "All Items",
-        buy_item_2: "",
-        combo_price: "",
-        // Added missing initial values for Tiered/Type selection
-        only_for: null,
-        type: "amount",
+        offer_name: "", offer_on: "All Items", gender: "all", discount_type: "Percentage",
+        min_order_value: "", discount: "", min_order_value_type: "",
+        buy_x: "1", buy_y: "1", item_1_offer_on: "All Items", buy_item_1: "",
+        item_2_offer_on: "All Items", buy_item_2: "", combo_price: "",
+        only_for: null, type: "amount",
     });
 
-    const fetchData = async () => {
-        try {
-            const res = await fetch(`https://dev.zuget.com/util/item_name_list`, {
-                headers: { Accept: "application/json", Authorization: tokenAuth },
-            });
-            const json = await res.json();
-            setItemList(json?.data?.results || []);
-        } catch (err) { console.error("Fetch Error", err); }
-    };
+    // Helper to keep original state update logic clean
+    const updateForm = (updates) => setCreateForm(prev => ({ ...prev, ...updates }));
 
-
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await fetch(`https://dev.zuget.com/util/item_name_list`, {
+                    headers: { Accept: "application/json", Authorization: tokenAuth },
+                });
+                const json = await res.json();
+                setItemList(json?.data?.results || []);
+            } catch (err) { console.error("Fetch Error", err); }
+        };
+        fetchData();
+    }, [tokenAuth]);
 
     const handleCategoryClick = (cat) => {
         setActiveCategory(cat);
-        const defaultSub = discountOptions[cat] ? discountOptions[cat][0] : "";
-        setCreateForm(prev => ({
-            ...prev,
-            discount_type: defaultSub,
-            // min_order_value_type: cat === "Cashback" ? "cashback" : "amount"
-        }));
+        const defaultSub = DISCOUNT_OPTIONS[cat] ? DISCOUNT_OPTIONS[cat][0] : "";
+        updateForm({ discount_type: defaultSub });
     };
+
 
     const handleAddOffer = async () => {
         const isCombo = createForm.discount_type === "Combo";
         const isBuyXGetY = createForm.discount_type === "Buy X Get Y";
+        const isLoyalty = createForm.discount_type === "Loyalty";
 
         setLoading(true);
         try {
@@ -74,9 +63,7 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
                 const formdata = new FormData();
                 formdata.append("file", fileInputRef.current.files[0]);
                 const res = await fetch(`https://dev.zuget.com/s3/image-file`, {
-                    method: "POST",
-                    headers: { Authorization: tokenAuth },
-                    body: formdata,
+                    method: "POST", headers: { Authorization: tokenAuth }, body: formdata,
                 });
                 const result = await res.json();
                 finalImageLink = result?.data?.image_link || result?.image_link;
@@ -95,14 +82,12 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
                     buy_item_2: createForm.buy_item_2,
                     combo_price: Number(createForm.combo_price)
                 });
-                finalDiscount = createForm.combo_price;
                 finalMinOrder = 0;
             } else if (isBuyXGetY) {
                 finalDiscount = `buy ${createForm.buy_x} get ${createForm.buy_y}`;
                 finalMinOrder = 0;
-            }
-            else if (isLoyalty) {
-                finalMinOrderType = 'after_n_order'
+            } else if (isLoyalty) {
+                finalMinOrderType = 'after_n_order';
             }
 
             const payload = {
@@ -125,17 +110,22 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
             });
 
             if (response.status === 200 || response.status === 201) {
+                setCreateForm({
+                    offer_name: "", offer_on: "All Items", gender: "all", discount_type: "Percentage",
+                    min_order_value: "", discount: "", min_order_value_type: "",
+                    buy_x: "1", buy_y: "1", item_1_offer_on: "All Items", buy_item_1: "",
+                    item_2_offer_on: "All Items", buy_item_2: "", combo_price: "",
+                    only_for: null, type: "amount",
+                });
                 Swal.fire({ icon: 'success', title: 'Success!', timer: 2000, showConfirmButton: false });
                 if (onSuccess) onSuccess();
             }
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to add discount.' });
-        } finally {
-            setLoading(false);
-            // window.location.reload()
-        }
+        } finally { setLoading(false); }
     };
 
+    // Shared UI classes
     const headerClass = "text-[12px] font-bold text-[#1e293b] py-4 px-4 whitespace-nowrap";
     const inputClass = "w-full border border-gray-100 rounded-md px-3 py-2 text-[13px] h-11 outline-none focus:border-purple-300 transition-colors bg-gray-50/30";
 
@@ -144,12 +134,45 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
     const isTiered = createForm.discount_type === "Tiered";
     const isLoyalty = createForm.discount_type === "Loyalty";
     const isItemGift = createForm.discount_type === "Item Gift";
-    console.log(createForm, 'csddddd');
+
+    // Common Select Component to avoid repeat logic
+    // Common Select Component
+    const ItemSelect = ({ valKey }) => {
+        // 1. Map the current string value in state to an object for the UI
+        const currentValue = createForm[valKey];
+        const selectedOption = currentValue === 'all'
+            ? { value: 'all', label: 'All Items' }
+            : { value: currentValue, label: currentValue };
+
+        return (
+            <div className="px-4 z-50">
+                <Select
+                    // 2. Pass the mapped object to the value prop
+                    value={currentValue ? selectedOption : null}
+                    options={[
+                        { value: 'all', label: 'All Items' },
+                        ...itemList.map(i => ({ value: i.name, label: i.name }))
+                    ]}
+                    onChange={(opt) => updateForm({ [valKey]: opt ? opt.value : 'all' })}
+                    menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                />
+            </div>
+        );
+    };
+
+    const GenderSelect = () => (
+        <div className="px-4">
+            <select className={inputClass} value={createForm.gender || "all"} onChange={e => updateForm({ gender: e.target.value })}>
+                {["all", "Men", "Women", "Unisex", "Kids"].map(g => <option key={g} value={g}>{g === 'all' ? 'For All' : g}</option>)}
+            </select>
+        </div>
+    );
 
     return (
         <div className="mb-10 font-sans w-full">
             <div className="flex flex-wrap gap-3 mb-6">
-                {categories.map((cat) => (
+                {CATEGORIES.map((cat) => (
                     <button key={cat} onClick={() => handleCategoryClick(cat)} className={`flex items-center justify-between border rounded-md px-4 py-2 text-[13px] min-w-[150px] ${activeCategory === cat ? 'border-purple-500 text-purple-600 font-bold' : 'text-gray-500'}`}>
                         {cat}
                     </button>
@@ -159,8 +182,8 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
             <div className="mb-6 flex items-center gap-4">
                 <span className="text-[12px] font-bold text-gray-400 uppercase">Select {activeCategory} Type:</span>
                 <div className="flex gap-2">
-                    {discountOptions[activeCategory]?.map((opt, ind) => (
-                        <button key={opt} onClick={() => setCreateForm({ ...createForm, discount_type: opt })} className={`px-4 py-1.5 rounded-full text-[12px] border ${createForm.discount_type === opt ? 'bg-purple-600 text-white' : 'bg-white'}`}>
+                    {DISCOUNT_OPTIONS[activeCategory]?.map((opt) => (
+                        <button key={opt} onClick={() => updateForm({ discount_type: opt })} className={`px-4 py-1.5 rounded-full text-[12px] border ${createForm.discount_type === opt ? 'bg-purple-600 text-white' : 'bg-white'}`}>
                             {opt}
                         </button>
                     ))}
@@ -168,284 +191,91 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-                <div className={`grid ${isCombo ? 'grid-cols-[1.2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr]' : isBuyXGetY ? 'grid-cols-[1.5fr_1fr_1fr_0.8fr_0.8fr_1fr_1fr]' : 'grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr_1fr]'} bg-gray-50/80 border-b border-gray-200`}>
+                {/* Headers */}
+                <div className={`grid ${isCombo ? 'grid-cols-8' : isBuyXGetY ? 'grid-cols-7' : 'grid-cols-7'} bg-gray-50/80 border-b border-gray-200`}>
                     <div className={headerClass}>Offer Name</div>
                     {!isCombo && <div className={headerClass}>Offer On</div>}
-                    {isCombo && (
+                    {isCombo ? (
                         <>
-                            <div className={headerClass}>Item 1 Offer On</div>
-                            <div className={headerClass}>Buy Item 1</div>
-                            <div className={headerClass}>Item 2 Offer On</div>
-                            <div className={headerClass}>Buy Item 2</div>
+                            <div className={headerClass}>Item 1 Offer On</div><div className={headerClass}>Buy Item 1</div>
+                            <div className={headerClass}>Item 2 Offer On</div><div className={headerClass}>Buy Item 2</div>
+                            <div className={headerClass}>Combo Price</div>
                         </>
-                    )}
-                    {isBuyXGetY && (
-                        <>
-                            <div className={headerClass}>Gender</div>
-                            <div className={headerClass}>Buy X</div>
-                            <div className={headerClass}>Buy Y</div>
-                        </>
-                    )}
-                    {!isBuyXGetY && !isCombo && !isTiered && !isLoyalty && (
+                    ) : isBuyXGetY ? (
+                        <><div className={headerClass}>Gender</div><div className={headerClass}>Buy X</div><div className={headerClass}>Buy Y</div></>
+                    ) : (
                         <>
                             <div className={headerClass}>Gender</div>
-                            <div className={headerClass}>Add Discount</div>
-                            <div className={headerClass}>Min Order Value</div>
+                            <div className={headerClass}>{isTiered ? "Offer for" : isLoyalty ? "Cashback" : isItemGift ? "Item Name" : "Add Discount"}</div>
+                            <div className={headerClass}>{isLoyalty ? "After N Orders" : "Min Order Value"}</div>
                         </>
                     )}
-                    {isTiered && <><div className={headerClass}>Gender</div>
-                        <div className={headerClass}>Offer for</div></>}
-                    {isLoyalty && <><div className={headerClass}>Gender</div>
-                        <div className={headerClass}>After N Orders</div>
-                        <div className={headerClass}>Cashback</div>
-                    </>}
-                    {/* {isItemGift &&} */}
-                    {isCombo && <div className={headerClass}>Combo Price</div>}
                     <div className={headerClass}>Marketing Image</div>
                     <div className={headerClass}>Save Discount</div>
                 </div>
 
-                <div className={`grid ${isCombo ? 'grid-cols-[1.2fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr]' : isBuyXGetY ? 'grid-cols-[1.5fr_1fr_1fr_0.8fr_0.8fr_1fr_1fr]' : 'grid-cols-[1.5fr_1fr_1fr_1fr_1fr_1fr_1fr]'} items-center py-5`}>
+                {/* Form Row */}
+                <div className={`grid ${isCombo ? 'grid-cols-8' : isBuyXGetY ? 'grid-cols-7' : 'grid-cols-7'} items-center py-5`}>
                     <div className="px-4">
-                        <input placeholder={`${createForm.discount_type === "Percentage"
-                            ? 'Eg: buy 2 get 10% off'
-                            : createForm.discount_type === "Flat"
-                                ? 'Buy for 2000 get Flat 500rs off'
-                                : createForm.discount_type === "Buy X Get Y"
-                                    ? 'eg: Buy 2 Get 2'
-                                    : createForm.discount_type === "Combo"
-                                        ? 'Eg: ₹50 Off'
-                                        : 'None'
-                            }`}
-                            className={inputClass} value={createForm.offer_name || ""} onChange={e => setCreateForm({ ...createForm, offer_name: e.target.value })} />
+                        <input className={inputClass} placeholder="Offer Name" value={createForm.offer_name} onChange={e => updateForm({ offer_name: e.target.value })} />
                     </div>
 
                     {isCombo ? (
                         <>
-                            <div className="px-4 z-50">
-                                <Select
-                                    options={[
-                                        { value: 'all', label: 'All Items' }, // Your static option
-                                        ...itemList.map(i => ({ value: i.name, label: i.name })) // Your dynamic list
-                                    ]}
-                                    onChange={(opt) => setCreateForm({ ...createForm, offer_on: opt.value })}
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                />
-                            </div>
+                            <ItemSelect valKey="offer_on" />
                             <div className="px-4">
-                                <select className={inputClass} value={createForm.buy_item_1 || ""} onChange={e => setCreateForm({ ...createForm, buy_item_1: e.target.value })}>
+                                <select className={inputClass} onChange={e => updateForm({ buy_item_1: e.target.value })}>
                                     <option value="">Select Item</option>
-                                    {itemList.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}
+                                    {itemList.map(i => <option key={i.name} value={i.name}>{i.name}</option>)}
                                 </select>
                             </div>
-                            <div className="px-4 z-50">
-                                <Select
-                                    options={[
-                                        { value: 'all', label: 'All Items' }, // Your static option
-                                        ...itemList.map(i => ({ value: i.name, label: i.name })) // Your dynamic list
-                                    ]}
-                                    onChange={(opt) => setCreateForm({ ...createForm, offer_on: opt.value })}
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                />
-                            </div>
+                            <ItemSelect valKey="offer_on" />
                             <div className="px-4">
-                                <select className={inputClass} value={createForm.buy_item_2 || ""} onChange={e => setCreateForm({ ...createForm, buy_item_2: e.target.value })}>
+                                <select className={inputClass} onChange={e => updateForm({ buy_item_2: e.target.value })}>
                                     <option value="">Select Item</option>
-                                    {itemList.map(item => <option key={item.id} value={item.name}>{item.name}</option>)}
+                                    {itemList.map(i => <option key={i.name} value={i.name}>{i.name}</option>)}
                                 </select>
                             </div>
-                            <div className="px-4"><input className={inputClass} type="number" placeholder="2999" value={createForm.combo_price || ""} onChange={e => setCreateForm({ ...createForm, combo_price: e.target.value })} /></div>
+                            <div className="px-4"><input className={inputClass} type="number" value={createForm.combo_price} onChange={e => updateForm({ combo_price: e.target.value })} /></div>
                         </>
                     ) : isBuyXGetY ? (
                         <>
-                            <div className="px-4 z-50">
-                                <Select
-                                    options={[
-                                        { value: 'all', label: 'All Items' }, // Your static option
-                                        ...itemList.map(i => ({ value: i.name, label: i.name })) // Your dynamic list
-                                    ]}
-                                    onChange={(opt) => setCreateForm({ ...createForm, offer_on: opt.value })}
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                />
-                            </div>
-                            <div className="px-4"><select className={inputClass} value={createForm.gender || "all"} onChange={e => setCreateForm({ ...createForm, gender: e.target.value })}>
-                                <option value="all">For All </option>
-                                <option value="Men">Men</option>
-                                <option value="Women">Women</option>
-                                <option value="Unisex">Unisex</option>
-                                <option value="Kids">Kids</option>
-                            </select></div>
-                            <div className="px-4">
-                                <select className={inputClass} value={createForm.buy_x || "1"} onChange={e => setCreateForm({ ...createForm, buy_x: e.target.value })}>{[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}</select>
-                            </div>
-                            <div className="px-4"><select className={inputClass} value={createForm.buy_y || "1"} onChange={e => setCreateForm({ ...createForm, buy_y: e.target.value })}>{[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+                            <ItemSelect valKey="offer_on" />
+                            <GenderSelect />
+                            <div className="px-4"><select className={inputClass} value={createForm.buy_x} onChange={e => updateForm({ buy_x: e.target.value })}>{[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+                            <div className="px-4"><select className={inputClass} value={createForm.buy_y} onChange={e => updateForm({ buy_y: e.target.value })}>{[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}</select></div>
                         </>
-                    ) : isTiered ? (
+                    ) : (
                         <>
-                            <div className="px-4 z-50">
-                                <Select
-                                    options={[
-                                        { value: 'all', label: 'All Items' }, // Your static option
-                                        ...itemList.map(i => ({ value: i.name, label: i.name })) // Your dynamic list
-                                    ]}
-                                    onChange={(opt) => setCreateForm({ ...createForm, offer_on: opt.value })}
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                />
-                            </div>
-                            <div className="px-4"><select className={inputClass} value={createForm.gender || "all"} onChange={e => setCreateForm({ ...createForm, gender: e.target.value })}>
-                                <option value="all">For All</option>
-                                <option value="Men">Men</option>
-                                <option value="Women">Women</option>
-                                <option value="Unisex">Unisex</option>
-                                <option value="Kids">Kids</option>
-                            </select></div>
-                            <div className="flex px-4">
-                                <input
-                                    type="text"
-                                    className={inputClass}
-                                    value={createForm.only_for || ""}
-                                    onChange={e => setCreateForm({ ...createForm, only_for: e.target.value })}
-                                />
-                                <select
-                                    className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-100 focus:outline-none"
-                                    value={createForm.type || "silver"}
-                                    onChange={e => setCreateForm({ ...createForm, only_for: e.target.value })}
-                                >
-                                    <option value="silver">Silver</option>
-                                    <option value="gold">Gold</option>
-                                </select>
-                            </div>
-                        </>
-                    ) : isLoyalty ? (
-                        <>
-                            <div className="px-4 z-50">
-                                <Select
-                                    options={[
-                                        { value: 'all', label: 'All Items' }, // Your static option
-                                        ...itemList.map(i => ({ value: i.name, label: i.name })) // Your dynamic list
-                                    ]}
-                                    onChange={(opt) => setCreateForm({ ...createForm, offer_on: opt.value })}
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                />
-                            </div>
-                            <div className="px-4"><select className={inputClass} value={createForm.gender || "all"} onChange={e => setCreateForm({ ...createForm, gender: e.target.value })}>
-                                <option value="all">For All</option>
-                                <option value="Men">Men</option>
-                                <option value="Women">Women</option>
-                                <option value="Unisex">Unisex</option>
-                                <option value="Kids">Kids</option>
-                            </select></div>
-                            <div className="px-4 z-50">
-                                <Select
-                                    // Corrected: Removed the extra outer brackets
-                                    options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => ({ value: i, label: i }))}
-
-                                    // Improved: Added 'opt &&' to prevent errors if the selection is cleared
-                                    onChange={(opt) => setCreateForm({ ...createForm, min_order_value: opt ? opt.value : '' })}
-
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                />
-                            </div>
-                            <div className="px-4 z-50">
-                                <input
-                                    type="number"
-                                    placeholder="eg: 500"
-                                    className={inputClass}
-                                    value={createForm.discount || ""}
-                                    onChange={e => setCreateForm({ ...createForm, discount: e.target.value })}
-                                />
-
-                            </div>
-
-                        </>
-                    ) 
-                    
-                   : isItemGift ? (
-                       <>
-                            <div className="px-4 z-50">
-                                <Select
-                                    options={[
-                                        { value: 'all', label: 'All Items' }, // Your static option
-                                        ...itemList.map(i => ({ value: i.name, label: i.name })) // Your dynamic list
-                                    ]}
-                                    onChange={(opt) => setCreateForm({ ...createForm, offer_on: opt.value })}
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                />
-                            </div>
-                            <div className="px-4"><select className={inputClass} value={createForm.gender || "all"} onChange={e => setCreateForm({ ...createForm, gender: e.target.value })}>
-                                <option value="all">For All</option>
-                                <option value="Men">Men</option>
-                                <option value="Women">Women</option>
-                                <option value="Unisex">Unisex</option>
-                                <option value="Kids">Kids</option>
-                            </select></div>
+                            <ItemSelect valKey="offer_on" />
+                            <GenderSelect />
                             <div className="flex px-4 items-center">
-                                <input placeholder="kkk" className={inputClass} value={createForm.only_for || ""} onChange={e => setCreateForm({ ...createForm, only_for: e.target.value })} />
-                                {/* <span className="ml-1">{createForm.discount_type === "Percentage" ? '%' : '₹'}</span> */}
+                                <input
+                                    className={inputClass}
+                                    // Add || "" to ensure the value is never null
+                                    value={(isTiered || isItemGift ? createForm.only_for : createForm.discount) || ""}
+                                    onChange={e => updateForm({ [isTiered || isItemGift ? 'only_for' : 'discount']: e.target.value })}
+                                />
+                                {!isTiered && !isItemGift && !isLoyalty && <span className="ml-1">{createForm.discount_type === "Percentage" ? '%' : '₹'}</span>}
                             </div>
                             <div className="flex px-4">
-                                <input
-                                    type="text"
-                                    className={inputClass}
-                                    value={createForm.min_order_value || ""}
-                                    onChange={e => setCreateForm({ ...createForm, min_order_value: e.target.value })}
-                                />
-                                <select
-                                    className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-100 focus:outline-none"
-                                    value={createForm.min_order_value_type}
-                                    onChange={e => setCreateForm({ ...createForm, min_order_value_type: e.target.value })}
-                                >
-                                    <option value="amount">Amount</option>
-                                    <option value="quantity">Quantity</option>
-                                </select>
-                            </div>
-                        </>
-                    ): (
-                        <>
-                            <div className="px-4 z-50">
-                                <Select
-                                    options={[
-                                        { value: 'all', label: 'All Items' }, // Your static option
-                                        ...itemList.map(i => ({ value: i.name, label: i.name })) // Your dynamic list
-                                    ]}
-                                    onChange={(opt) => setCreateForm({ ...createForm, offer_on: opt.value })}
-                                    menuPortalTarget={document.body}
-                                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                                />
-                            </div>
-                            <div className="px-4"><select className={inputClass} value={createForm.gender || "all"} onChange={e => setCreateForm({ ...createForm, gender: e.target.value })}>
-                                <option value="all">For All</option>
-                                <option value="Men">Men</option>
-                                <option value="Women">Women</option>
-                                <option value="Unisex">Unisex</option>
-                                <option value="Kids">Kids</option>
-                            </select></div>
-                            <div className="flex px-4 items-center">
-                                <input placeholder="kkk" className={inputClass} value={createForm.discount || ""} onChange={e => setCreateForm({ ...createForm, discount: e.target.value })} />
-                                <span className="ml-1">{createForm.discount_type === "Percentage" ? '%' : '₹'}</span>
-                            </div>
-                            <div className="flex px-4">
-                                <input
-                                    type="text"
-                                    className={inputClass}
-                                    value={createForm.min_order_value || ""}
-                                    onChange={e => setCreateForm({ ...createForm, min_order_value: e.target.value })}
-                                />
-                                <select
-                                    className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-100 focus:outline-none"
-                                    value={createForm.min_order_value_type}
-                                    onChange={e => setCreateForm({ ...createForm, min_order_value_type: e.target.value })}
-                                >
-                                    <option value="amount">Amount</option>
-                                    <option value="quantity">Quantity</option>
-                                </select>
+                                {isLoyalty ? (
+                                    <Select
+                                        value={createForm.min_order_value ? { value: createForm.min_order_value, label: createForm.min_order_value } : null}
+                                        options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => ({ value: i, label: i }))}
+                                        onChange={(opt) => updateForm({ min_order_value: opt ? opt.value : '' })}
+                                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                                        styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                                    />
+                                ) : (
+                                    <>
+                                        <input className={inputClass} value={createForm.min_order_value} onChange={e => updateForm({ min_order_value: e.target.value })} />
+                                        <select className="px-1 border border-l-0 rounded-r-md bg-gray-100" value={createForm.min_order_value_type} onChange={e => updateForm({ min_order_value_type: e.target.value })}>
+                                            <option value="amount">Amt</option>
+                                            <option value="quantity">Qty</option>
+                                        </select>
+                                    </>
+                                )}
                             </div>
                         </>
                     )}
