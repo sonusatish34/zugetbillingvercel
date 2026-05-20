@@ -15,10 +15,19 @@ const DISCOUNT_OPTIONS = {
 };
 
 export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSuccess }) {
+
     const [loading, setLoading] = useState(false);
     const [itemList, setItemList] = useState([]);
     const [activeCategory, setActiveCategory] = useState("Price Based");
     const fileInputRef = useRef(null);
+    const [imagePreview, setImagePreview] = useState(null);
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
 
     const [createForm, setCreateForm] = useState({
         offer_name: "", offer_on: "All Items", gender: "all", discount_type: "Percentage",
@@ -27,7 +36,7 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
         item_2_offer_on: "All Items", buy_item_2: "", combo_price: "",
         only_for: null, type: "amount",
     });
-
+ 
     // Helper to keep original state update logic clean
     const updateForm = (updates) => setCreateForm(prev => ({ ...prev, ...updates }));
 
@@ -50,7 +59,7 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
         updateForm({ discount_type: defaultSub });
     };
 
-
+    // console.log(fileInputRef.current?.files[0],"fileInputRef.current?.files[0]")
     const handleAddOffer = async () => {
         const isCombo = createForm.discount_type === "Combo";
         const isBuyXGetY = createForm.discount_type === "Buy X Get Y";
@@ -122,8 +131,8 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
             }
         } catch (err) {
             Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to add discount.' });
-        } finally { setLoading(false); }
-    };
+        } finally { setLoading(false); setImagePreview(null); }
+    }; 
 
     // Shared UI classes
     const headerClass = "text-[12px] font-bold text-[#1e293b] py-4 px-4 whitespace-nowrap";
@@ -171,6 +180,7 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
 
     return (
         <div className="mb-10 font-sans w-full">
+
             <div className="flex flex-wrap gap-3 mb-6">
                 {CATEGORIES.map((cat) => (
                     <button key={cat} onClick={() => handleCategoryClick(cat)} className={`flex items-center justify-between border rounded-md px-4 py-2 text-[13px] min-w-[150px] ${activeCategory === cat ? 'border-purple-500 text-purple-600 font-bold' : 'text-gray-500'}`}>
@@ -202,7 +212,7 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
                             <div className={headerClass}>Combo Price</div>
                         </>
                     ) : isBuyXGetY ? (
-                        <><div className={headerClass}>Gender</div><div className={headerClass}>Buy X</div><div className={headerClass}>Buy Y</div></>
+                        <><div className={headerClass}>Gender</div><div className={headerClass}>Buy X</div><div className={headerClass}>Get Y</div></>
                     ) : (
                         <>
                             <div className={headerClass}>Gender</div>
@@ -280,18 +290,40 @@ export default function AddDiscountForm({ tokenAuth, app_user_id, store_id, onSu
                         </>
                     )}
 
-                    <div className="px-4">
-                        <button onClick={() => fileInputRef.current?.click()} className="text-[#10B981] font-bold text-[13px] flex items-center gap-2 justify-center w-full bg-green-50/50 py-2 rounded-md">
-                            <ImageIcon size={16} /> Upload
+                    <div className="px-4 flex flex-col items-center gap-2">
+                        {/* Image Preview Thumbnail */}
+                        {imagePreview && (
+                            <img
+                                src={imagePreview}
+                                alt="preview"
+                                className="w-10 h-10 object-contain rounded border"
+                            />
+                        )}
+
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-[#10B981] font-bold text-[13px] flex items-center gap-2 justify-center w-full bg-green-200/50 py-2 rounded-md hover:scale-105 cursor-pointer"
+                        >
+                            <ImageIcon size={16} /> {imagePreview ? "Change" : "Upload"}
                         </button>
-                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" />
+
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageChange} // Added this
+                        />
+
                     </div>
+
                     <div className="px-4">
                         <button onClick={handleAddOffer} disabled={loading} className="w-full bg-[#7C3AED] text-white py-2.5 rounded-lg font-bold text-[13px] flex items-center justify-center gap-2">
                             {loading ? <Loader2 className="animate-spin" size={16} /> : <PlusCircle size={16} />}
                             Add Offer
                         </button>
                     </div>
+                    
                 </div>
             </div>
         </div>
